@@ -1,5 +1,34 @@
 import json
 
+def make_requestobject(command,line,address,channel,itemtype):
+    reqobj = {}
+    reqobj["c"] = command
+    reqobj["p"] = {
+        "p": {
+            "l": line, 
+		    "a": address,
+			"c": channel
+		},
+		"i": itemtype,
+		"v": "",
+		"u": ""
+    }
+
+    return reqobj
+
+
+def checkResponse(_dict):
+    if "trigger" in _dict.keys():
+        if _dict["trigger"] != "true":
+            raise Exception('trigger', 'not acknolwdged')
+    if "t" in _dict.keys():
+        struc_type = _dict["t"]
+        print(struc_type )
+        if struc_type == "info":
+            print(struc_type["info"])
+            pass
+      
+
 
 def login(username,password):
     data = {}

@@ -29,9 +29,13 @@
     <Compile Include="ping.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="readicsConfig.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="getItemsInfo.xml" />
+    <Content Include="icsConfig.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
