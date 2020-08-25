@@ -5,7 +5,7 @@
     <ProjectGuid>2524829f-1163-42e1-83d3-bbc483422479</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>isegCC2x.py</StartupFile>
+    <StartupFile>readicsConfig.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -29,13 +29,21 @@
     <Compile Include="ping.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="PowerSupply.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="readicsConfig.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="entangle\example\Charm-small-HV-supply.res" />
     <Content Include="getItemsInfo.xml" />
     <Content Include="icsConfig.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="entangle\" />
+    <Folder Include="entangle\example\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

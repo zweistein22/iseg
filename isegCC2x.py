@@ -82,8 +82,8 @@ loop.run_until_complete(login())
 #loop.run_until_complete(getItemsInfo())
 loop.run_until_complete(getConfig(sessionid))
 
-rol = []
-rol.append(json_data.make_requestobject("getItem",0,0,0,"VoltageMeasure"))
+rol = [] # request object list 
+rol.append(json_data.make_requestobject("getItem","0_0_0","Control.voltageSet"))
 
 loop.run_until_complete(execute_request(sessionid,rol))
 

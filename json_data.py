@@ -1,6 +1,10 @@
 import json
 
-def make_requestobject(command,line,address,channel,itemtype):
+def make_requestobject(command,lac,itemtype,val="",unit=""):
+    s = lac.split("_")
+    line = int(s[0])
+    address = int(s[1])
+    channel = int(s[2])
     reqobj = {}
     reqobj["c"] = command
     reqobj["p"] = {
@@ -10,23 +14,18 @@ def make_requestobject(command,line,address,channel,itemtype):
 			"c": channel
 		},
 		"i": itemtype,
-		"v": "",
-		"u": ""
+		"v": val,
+		"u": unit
     }
 
     return reqobj
 
 
 def checkResponse(_dict):
-    if "trigger" in _dict.keys():
-        if _dict["trigger"] != "true":
-            raise Exception('trigger', 'not acknolwdged')
-    if "t" in _dict.keys():
-        struc_type = _dict["t"]
-        print(struc_type )
-        if struc_type == "info":
-            print(struc_type["info"])
-            pass
+    for d in _dict:
+        if "trigger" in d:
+            if d["trigger"] != "true":
+                raise Exception('trigger', 'not acknolwdged')
       
 
 
