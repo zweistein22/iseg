@@ -39,9 +39,9 @@ class PowerSupply():
           #checkoperatingstates(operatingstates)
           add_monitor(self.address,self.user,self.password)
           self.state = states.ON
-
-      def setItemValue(self,groupname,item,channelvalues):
-        rol = [] # request object list 
+     
+      def setGroupItemValues(self,groupname,cmditem,channelvalues):
+        rol = []
         channels = self.jgroup[groupname]['CHANNEL']
         rampstyle = self.jgroup[groupname]['OPERATINGSTYLE']
         for rstyle in self.joperatingstates :
@@ -53,14 +53,33 @@ class PowerSupply():
                          raise Exception('len list of channelvalues ', 'not equal len list of channels in group '+groupname)
                     for channel in channels :
                             rol.append(json_data.make_requestobject("setItem",channel,item,v))
+                    rol.append(setItemValue(channels,cmditem,channelvalues))
         return rol
+        
 
-      def SetVoltage(self, arg):
+
+      def rolAddOperatingStyle(self,groupname):
+        rol = [] # request object list 
+        channels = self.jgroup[groupname]['CHANNEL']
+        rampstyle = self.jgroup[groupname]['OPERATINGSTYLE']
+        for rstyle in self.joperatingstates :
+            stylename = list(rstyle.keys())[0]
+            if stylename == rampstyle :
+                for k, v in rstyle[stylename].items():
+                    item = k
+                    for channel in channels :
+                        rol.append(json_data.make_requestobject("setItem",channel,item,v))
+        return rol
+      
+      def getChannels(self,groupname):
+           return self.jgroup[groupname]['CHANNEL']
+           
+      def rolSetVoltage(self, arg):
           if len(arg) != 2 :
                raise Exception('SetVoltage(arg)', 'is not a pair of objects (must be lists)')
           keys = arg[1]
           values = arg[0]
-
+          # check channel is one of groups
           if len(keys) != len(values) :
                raise Exception('len list of values ', 'not equal len list of keys')
 
@@ -69,12 +88,10 @@ class PowerSupply():
           for i in range(len(keys)):
              rol.append(setItemValue(self,keys[i],"Control.setVoltage",values[i]))
      
-          return "ok"
-      #for group in self.jgroups:
-      #    groupname = list(group.keys())[0]
-#         setItemValue(self,groupname,"Control.voltageSet",arg)
-      #print(arg)
-     # return arg
+          return rol
+      def ApplyTransition(self,transition):
+        pass
+     
    
 
 
@@ -82,5 +99,9 @@ a = PowerSupply()
 
 a.init()
 
+channels = a.getChannels("Anodes")
 
-a.SetVoltage(([3.0],["0_0_0"]))
+rol = a.rolSetVoltage(([3.0],["0_0_0"]))
+queue_request(rol)
+
+

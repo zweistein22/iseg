@@ -18,7 +18,7 @@ groups ="""
 {
  "GROUP": [
    {"Anodes": { "CHANNEL": ["0_0_0","0_0_1","0_0_2"]  ,"OPERATINGSTYLE": "slow" }},
-   {"CathodeStripes": { "channel": ["0_0_4","0_0_5"],  "Control.voltageSet": [75,80],  "OPERATINGSTYLE": "normal" }},
+   {"CathodeStripes": { "CHANNEL": ["0_0_4","0_0_5"],  "Control.voltageSet": [75,80],  "OPERATINGSTYLE": "normal" }},
    {"Window": { "CHANNEL": ["0_0_7"],  "Control.voltageSet": [-1000] , "OPERATINGSTYLE": "slow" }}
  ]
 }

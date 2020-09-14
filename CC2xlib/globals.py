@@ -171,5 +171,5 @@ def add_monitor(ipaddress,user,password):
 
 def queue_request(rol):
     if len(rol) == 0: return
-    #loop.call_soon_threadsafe(execute_request(sessionid, rol))
-    loop.run_until_complete(execute_request(sessionid, rol))
+    loop.call_soon_threadsafe(execute_request(sessionid, rol))
+    #loop.run_until_complete(execute_request(sessionid, rol))
