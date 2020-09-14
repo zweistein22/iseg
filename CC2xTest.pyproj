@@ -2,16 +2,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>2524829f-1163-42e1-83d3-bbc483422479</ProjectGuid>
-    <ProjectHome>
-    </ProjectHome>
-    <StartupFile>readicsConfig.py</StartupFile>
+    <ProjectGuid>8ecec8f5-e181-4867-a65c-dc65c9d481a3</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>IsegCC2xTest.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
-    <Name>isegCC2x</Name>
-    <RootNamespace>iseqCC2x</RootNamespace>
+    <Name>IsegCC2xTest</Name>
+    <RootNamespace>IsegCC2xTest</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,28 +21,26 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="isegCC2x.py" />
-    <Compile Include="json_data.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="ping.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="PowerSupply.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="readicsConfig.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="CC2x.py" />
+    <Compile Include="CC2xlib\globals.py" />
+    <Compile Include="CC2xlib\json_data.py" />
+    <Compile Include="CC2xlib\ping.py" />
+    <Compile Include="CC2xlib\__init__.py" />
+    <Compile Include="IsegCC2xTest.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="entangle\example\Charm-small-HV-supply.res" />
-    <Content Include="getItemsInfo.xml" />
-    <Content Include="icsConfig.xml" />
+    <Folder Include="CC2xlib\" />
+    <Folder Include="CC2xlib\__pycache__\" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="entangle\" />
-    <Folder Include="entangle\example\" />
+    <Content Include="CC2xlib\172_25_25_56getItemsInfo.xml" />
+    <Content Include="CC2xlib\172_25_25_56_icsConfig.xml" />
+    <Content Include="CC2xlib\getItemsInfo.xml" />
+    <Content Include="CC2xlib\icsConfig.xml" />
+    <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />
+    <Content Include="CC2xlib\__pycache__\json_data.cpython-37.pyc" />
+    <Content Include="CC2xlib\__pycache__\ping.cpython-37.pyc" />
+    <Content Include="CC2xlib\__pycache__\__init__.cpython-37.pyc" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

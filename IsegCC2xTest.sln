@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
-VisualStudioVersion = 16.0.30310.162
+VisualStudioVersion = 16.0.30503.244
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "isegCC2x", "isegCC2x.pyproj", "{2524829F-1163-42E1-83D3-BBC483422479}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "IsegCC2xTest", "IsegCC2xTest.pyproj", "{8ECEC8F5-E181-4867-A65C-DC65C9D481A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,13 +11,13 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2524829F-1163-42E1-83D3-BBC483422479}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2524829F-1163-42E1-83D3-BBC483422479}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ECEC8F5-E181-4867-A65C-DC65C9D481A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ECEC8F5-E181-4867-A65C-DC65C9D481A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {371590B2-9E47-4AF8-B637-D76E84CD658D}
+		SolutionGuid = {FC4D6AE8-AABB-44BB-8384-4D78F10FFD44}
 	EndGlobalSection
 EndGlobal

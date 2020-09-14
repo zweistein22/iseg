@@ -1,3 +1,13 @@
+#  -*- coding: utf-8 -*-
+#***************************************************************************
+#* Copyright (C) 2020 by Andreas Langhoff *
+#* <andreas.langhoff@frm2.tum.de> *
+#* This program is free software; you can redistribute it and/or modify *
+#* it under the terms of the GNU General Public License v3 as published *
+#* by the Free Software Foundation; *
+# **************************************************************************
+
+
 import json
 
 def make_requestobject(command,lac,itemtype,val="",unit=""):
