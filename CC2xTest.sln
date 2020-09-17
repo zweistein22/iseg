@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30503.244
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "IsegCC2xTest", "IsegCC2xTest.pyproj", "{8ECEC8F5-E181-4867-A65C-DC65C9D481A3}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "CC2xTest", "CC2xTest.pyproj", "{8ECEC8F5-E181-4867-A65C-DC65C9D481A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +18,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {FC4D6AE8-AABB-44BB-8384-4D78F10FFD44}
+		SolutionGuid = {9D9C2084-C5F1-4092-BDD3-AB00E52A9EE1}
 	EndGlobalSection
 EndGlobal

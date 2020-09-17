@@ -11,51 +11,57 @@ import asyncio
 import aiohttp
 import websockets
 import json
-from urllib.request import urlopen
-import time
 from concurrent.futures import TimeoutError as ConnectionTimeoutError
 import base64
 import os
 import inspect
 from os.path import expanduser
 
-import entangle.device.iseg.CC2xlib.json_data as json_data
-import entangle.device.iseg.CC2xlib.ping as ping
+from entangle.core import states
+import threading
+
+import entangle.device.iseg.CC2xlib as CC2xlib
+import CC2xlib.json_data
+ 
+lock = threading.Lock()
 
 sessionid = ''
 websocket = None
+itemUpdated = {}
+state = states.UNKNOWN
+monitored_channels = []
 
-channelfolders = []
-
-
+cmdqueue = []
 
 
 async def heartbeat(connection):
     while True:
-            try:
-                await connection.send('ping')
-                await asyncio.sleep(15)
-            except websockets.exceptions.ConnectionClosed:
-                print('Connection with server closed')
-                break
+        try:
+            await connection.send('ping')
+            await asyncio.sleep(15)
+        except websockets.exceptions.ConnectionClosed:
+            print('Connection with server closed.')
+            break
+        except Exception as inst:
+            print(type(inst))    # the exception instance
+            print(inst.args)     # arguments stored in .args
+            print(inst)  
+            break
+            
     
 async def listen(connection):
-    global sessionid
+    global sessionid,lock,itemUpdated,websocket
     while True:
         try :
             response = await connection.recv()
             
-            dict = json.loads(response)
-            print(dict)
-            if "trigger" in dict:
-                if dict["trigger"] == "false":
-                    continue
-                   
-            if "d" in dict:
-                data  = dict["d"]
-                if "file" in dict:
-                    filename = dict["file"]
-                    bytes = base64.b64decode(data)
+            dictlist = json.loads(response)
+
+            if "d" in dictlist:
+                data  = dictlist["d"]
+                if "file" in dictlist:
+                    filename = dictlist["file"]
+                    databytes = base64.b64decode(data)
                     scriptfile = inspect.getframeinfo(inspect.currentframe()).filename
                     writeablepath = os.path.dirname(os.path.abspath(scriptfile))
                     client = connection.remote_address
@@ -69,38 +75,88 @@ async def listen(connection):
                     fullpath = os.path.join(writeablepath,clientstr+filename)
 
                     with open(fullpath, "wb") as file:
-                        file.write(bytes)
+                        file.write(databytes)
                         print(fullpath)
+                    continue
 
-            if "i" in dict:
-                if  dict["i"] == sessionid:
-                     # our sessionid, so
-                     print(dict)
-                     
-                     # fill out our log with the results
+            for adict in dictlist:
+                #print(adict)
+                if "trigger" in dictlist:
+                    if dictlist["trigger"] == "false":
+                        print(dictlist)
+                        pass
+                    continue
+                
+                
+                if "t" in adict:
+                    if adict["t"] == "info":
+                        #print(adict)
+                        pass
+                    if adict["t"] == "response":
+                        #print(adict)
+                        pass
+                    if "c" in adict:
+                        contentlist = adict["c"]
+                        for c in contentlist:
+                            lac = CC2xlib.json_data.getshortlac(c["d"]["p"])
+                            if lac in monitored_channels:
+                                print(c["d"])
+                                command = c["d"]["i"]
+                                value = c["d"]["v"]
+                                unit =  c["d"]["u"]
+                                vu = {"v":value, "u": unit}
+                                if lac == "__":
+                                    maxconnections = 2
+                                    if (command == "Status.connectedClients" and int(value) > maxconnections):
+                                        print("only "+str(maxconnections)+ " client(s) connection allowed.")
+                                        await connection.close()
+                                    continue
+                                lock.acquire()
+
+                                ourdict = {}
+                                if lac in itemUpdated:
+                                    ourdict = itemUpdated[lac]
+                                # this is a dict again, and that we will update
+                                ourdict[command] = vu
+                                itemUpdated[lac] = ourdict
+                                lock.release()
+
+                  # fill out our log with the results
         except Exception as inst:
             print(type(inst))    # the exception instance
             print(inst.args)     # arguments stored in .args
             print(inst)          # __str__ allows args to be printed directly,
             break
-    
+   
+    lock.acquire()
+    websocket = None
+    lock.release() 
 
 
 async def login(address,user,password):
     timeout = 5
     global websocket
     global sessionid
+    global state
     try:
         websocket = await asyncio.wait_for(websockets.connect('ws://'+address+':8080'), timeout)
-        cmd = json_data.login(user,password)
+        cmd = CC2xlib.json_data.login(user,password)
         await websocket.send(cmd)
         response = await websocket.recv()
-        dict = json.loads(response)
-        sessionid = dict["i"]
+        adict = json.loads(response)
+        lock.acquire()
+        sessionid = adict["i"]
+        state = states.ON
+        lock.release()
         
-    except  ConnectionTimeoutError as e:
+        
+    except  ConnectionTimeoutError:
         print("Connection timeout")
+        
+        lock.acquire()
         websocket = None
+        state = states.FAULT
+        lock.release()
    
 
 async def fetch(session, url):
@@ -125,51 +181,95 @@ async def getItemsInfo(address):
             file.write(html)
             print(fullpath)
 
-async def getConfig(sessionid):
-        global websocket
- #   async with websockets.connect('ws://'+address+':8080') as websocket:
-        cmd = json_data.getConfig(sessionid)
-        await websocket.send(cmd)
+async def getConfig():
+    global websocket, sessionid
+    cmd = CC2xlib.json_data.getConfig(sessionid)
+    await websocket.send(cmd)
                
 
-async def execute_request(sessionid, requestobjlist):
-        global websocket
-        #async with websockets.connect('ws://'+address+':8080') as websocket:
-        cmd = json_data.request(sessionid, requestobjlist)
-        await websocket.send(cmd)
+async def execute_request(requestobjlist):
+    global websocket, sessionid
+    cmd = CC2xlib.json_data.request(sessionid, requestobjlist)
+    await websocket.send(cmd)
+    return True
         
        
 monitored = []
 
-def monitor(address,user,password,loop):
+def monitor(address,user,password):
+    global websocket, state, loop
     asyncio.set_event_loop(loop)
     #ping.ping(address)
     loop.run_until_complete(login(address,user,password))
+    tmpstate = states.UNKNOWN
+    lock.acquire()
+    tmpstate = state
+    lock.release()
+    if tmpstate != states.ON:
+        return
+    lock.acquire()
     monitored.append(address)
-    
-    loop.run_until_complete(getItemsInfo(address))
-    loop.run_until_complete(getConfig(sessionid))
-
-    future1 = asyncio.ensure_future(heartbeat(websocket))
-    future2 = asyncio.ensure_future(listen(websocket))
-    loop.run_until_complete(asyncio.gather(future1,future2))
-    
+    lock.release()
+    #loop.run_until_complete(getItemsInfo(address))
+    #loop.run_until_complete(getConfig())
+    try :
+        future1 = asyncio.ensure_future(heartbeat(websocket))
+        future2 = asyncio.ensure_future(listen(websocket))
+        loop.run_until_complete(asyncio.gather(future1,future2))
+    except:
+        pass
+    lock.acquire()
     monitored.remove(address)
+    lock.release()
 
 loop = None
+
 def add_monitor(ipaddress,user,password):
     global loop
+    alreadyrunning = False;
+    lmon = 0
+    lock.acquire()
+    lmon = len(monitored)
     if ipaddress in monitored:
+        alreadyrunning = True
+    lock.release()
+    if alreadyrunning: 
         return
-    if len(monitored) :
+    if lmon :
         raise Exception("Unsupported: multiple ip addresses")
     loop = asyncio.get_event_loop()
-    import threading
-    t = threading.Thread(target=monitor, args=(ipaddress,user,password,loop,))
+    
+    t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
     t.start()
-
+   
 
 def queue_request(rol):
+    global sessionid, state, loop
     if len(rol) == 0: return
-    loop.call_soon_threadsafe(execute_request(sessionid, rol))
-    #loop.run_until_complete(execute_request(sessionid, rol))
+    sid =''
+    tmpstate = states.UNKNOWN
+    while sid == '':
+        lock.acquire()
+        tmpstate = state
+        sid = sessionid
+        lock.release()
+        if tmpstate == states.FAULT:
+            return # no action
+    future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
+    timeout = 3
+    try :
+        result = future.result(timeout)
+    except asyncio.TimeoutError:
+        print('The coroutine took too long, cancelling the task...')
+        future.cancel()
+    except Exception as exc:
+        print(f'The coroutine raised an exception: {exc!r}')
+    else:
+        return result
+
+
+
+    
+    
+   
+    

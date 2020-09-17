@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>8ecec8f5-e181-4867-a65c-dc65c9d481a3</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>IsegCC2xTest.py</StartupFile>
+    <StartupFile>CC2xTest.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -26,17 +26,17 @@
     <Compile Include="CC2xlib\json_data.py" />
     <Compile Include="CC2xlib\ping.py" />
     <Compile Include="CC2xlib\__init__.py" />
-    <Compile Include="IsegCC2xTest.py" />
+    <Compile Include="CC2xTest.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="CC2xlib\" />
+    <Folder Include="CC2xlib\example\" />
     <Folder Include="CC2xlib\__pycache__\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="CC2xlib\172_25_25_56getItemsInfo.xml" />
+    <Content Include="CC2xlib\172_25_25_56_getItemsInfo.xml" />
     <Content Include="CC2xlib\172_25_25_56_icsConfig.xml" />
-    <Content Include="CC2xlib\getItemsInfo.xml" />
-    <Content Include="CC2xlib\icsConfig.xml" />
+    <Content Include="CC2xlib\example\Erwin-small-HV.res" />
     <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\json_data.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\ping.cpython-37.pyc" />

@@ -10,11 +10,27 @@
 
 import json
 
+def getshortlac(jsonobj):
+    rv = ''
+    rv += jsonobj["l"]
+    rv += "_"
+    rv += jsonobj["a"]
+    rv += "_"
+    rv += jsonobj["c"]
+    return rv
+    
+
 def make_requestobject(command,lac,itemtype,val="",unit=""):
     s = lac.split("_")
-    line = int(s[0])
-    address = int(s[1])
-    channel = int(s[2])
+    line = ''
+    address = ''
+    channel = ''
+    if len(s) > 0:
+        line = s[0]
+    if len(s) > 1:
+        address = s[1]
+    if len(s) > 2:
+        channel = s[2]
     reqobj = {}
     reqobj["c"] = command
     reqobj["p"] = {
@@ -34,7 +50,7 @@ def make_requestobject(command,lac,itemtype,val="",unit=""):
 def checkResponse(_dict):
     for d in _dict:
         if "trigger" in d:
-            if d["trigger"] != "true":
+            if d["trigger"] == "false":
                 raise Exception('trigger', 'not acknolwdged')
       
 

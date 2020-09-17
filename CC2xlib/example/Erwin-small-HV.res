@@ -1,18 +1,25 @@
 ["test/Erwin/HV-Powersupply"]
 type = "iseg.CC2x.PowerSupply"
-
 address = '172.25.25.56'
 user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
+master = '0_1000'
 
-transitions="""{
+transitions="""
+{
 "TRANSITION" :[
-{"Off->On": {"GROUP":["Anodes"],"Control.voltageSet": [2075,2100,2085] }},
-
+{"Off->On":  [{"GROUP":["Anodes"],"Control.voltageSet": [2075,2100,2085]},
+              {"GROUP":["Anodes"],"Control.on": [1,1,1] },
+              {"GROUP":["Anodes"],"Event.endOfRamp": [1,1,1] }
+             ]
+},
+{"On>Off":  [{"GROUP":["Anodes"],"Control.on": [0,0,0] } ]
+}
 ]
-}"""
+}
+"""
 
 groups ="""
 {

@@ -6,14 +6,15 @@
 #* it under the terms of the GNU General Public License v3 as published *
 #* by the Free Software Foundation; *
 # **************************************************************************
-import time
+
 import json
 
 from entangle import base
-from entangle.core import states , Prop, Cmd, pair,pairsof,listof
+from entangle.core import states , Prop, Cmd, pair,listof
+import entangle.device.iseg.CC2xlib as CC2xlib
+import CC2xlib.globals
+import CC2xlib.json_data
 
-
-from entangle.device.iseg.CC2xlib.globals import add_monitor, queue_request
 
 
 class PowerSupply(base.MLZDevice):
@@ -52,18 +53,18 @@ class PowerSupply(base.MLZDevice):
    
  
     def init(self):
-      print("Init")
-      self.jgroups = json.loads(self.groups)
-      #checkchannels(groups)
-      self.joperatingstates = json.loads(self.operatingstates)
+        
+        self.jgroups = json.loads(self.groups)
+        #checkchannels(groups)
+        self.joperatingstates = json.loads(self.operatingstates)
 
-      for group in self.jgroups:
-          #groupname = list(group.keys())[0]
-          print(group)
+        for group in self.jgroups:
+            #groupname = list(group.keys())[0]
+            print(group)
 
-      #checkoperatingstates(operatingstates)
-      add_monitor(self.address,self.user,self.password)
-      state = states.ON
+        #checkoperatingstates(operatingstates)
+        CC2xlib.globals.add_monitor(self.address,self.user,self.password)
+        self.state = states.ON
    
     def setItemValue(self,groupname,item,value):
         rol = [] # request object list 
@@ -75,20 +76,21 @@ class PowerSupply(base.MLZDevice):
                 for k, v in rstyle[stylename].items():
                     item = k
                     for channel in channels :
-                            rol.append(json_data.make_requestobject("setItem",channel,item,v))
-        queue_request(rol)
+                        rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
+        CC2xlib.globals.queue_request(rol)
+
     def SetRampSpeed(self,arg):
         pass
 
     def SetVoltage(self, arg):
-          if len(arg) != 2 :
-               raise Exception('SetVoltage(arg)', 'is not a pair of objects (must be lists)')
-          keys = arg[1]
-          values = arg[0]
+        if len(arg) != 2 :
+            raise Exception('SetVoltage(arg)', 'is not a pair of objects (must be lists)')
+        keys = arg[1]
+        values = arg[0]
 
-          if len(keys) != len(values) :
-               raise Exception('len list of values ', 'not equal len list of keys')
-          return "ok"
+        if len(keys) != len(values) :
+            raise Exception('len list of values ', 'not equal len list of keys')
+        return "ok"
      
     def ApplyTransition(self,transition):
         pass
