@@ -23,16 +23,24 @@ import threading
 import entangle.device.iseg.CC2xlib as CC2xlib
 import CC2xlib.json_data
  
+
+instances = []
+
+always_monitored = ['0_1000_','__']
+
 lock = threading.Lock()
 
 sessionid = ''
 websocket = None
 itemUpdated = {}
 state = states.UNKNOWN
-monitored_channels = []
 
-cmdqueue = []
-
+def StatusJson()->str:
+    rv = ''
+    lock.acquire()
+    rv = json.dumps(itemUpdated)
+    lock.release()
+    return rv
 
 async def heartbeat(connection):
     while True:
@@ -50,7 +58,7 @@ async def heartbeat(connection):
             
     
 async def listen(connection):
-    global sessionid,lock,itemUpdated,websocket
+    global sessionid,lock,itemUpdated,websocket,always_monitored,instances
     while True:
         try :
             response = await connection.recv()
@@ -84,7 +92,6 @@ async def listen(connection):
                 if "trigger" in dictlist:
                     if dictlist["trigger"] == "false":
                         print(dictlist)
-                        pass
                     continue
                 
                 
@@ -99,7 +106,13 @@ async def listen(connection):
                         contentlist = adict["c"]
                         for c in contentlist:
                             lac = CC2xlib.json_data.getshortlac(c["d"]["p"])
-                            if lac in monitored_channels:
+                            someinstancesubscribed = 0
+                            lock.acquire()
+                            for inst in instances:
+                                if lac in  inst.channels_handled:
+                                    someinstancesubscribed = 1
+                            lock.release()
+                            if (someinstancesubscribed or (lac in always_monitored)):
                                 print(c["d"])
                                 command = c["d"]["i"]
                                 value = c["d"]["v"]
@@ -111,15 +124,41 @@ async def listen(connection):
                                         print("only "+str(maxconnections)+ " client(s) connection allowed.")
                                         await connection.close()
                                     continue
-                                lock.acquire()
-
+                                lenrr = 0
                                 ourdict = {}
+                                lock.acquire()
                                 if lac in itemUpdated:
                                     ourdict = itemUpdated[lac]
                                 # this is a dict again, and that we will update
                                 ourdict[command] = vu
                                 itemUpdated[lac] = ourdict
+
+                                for inst in instances:
+                                    if inst.waitstring :
+                                        obj = json.loads(inst.waitstring)
+                                        for item in obj:
+                                            if item!='GROUP':
+                                                groupnames = obj['GROUP']
+                                                groupname = groupnames[0]
+                                                requestedvalues = obj[item]
+                                                channels = inst.getChannels(groupname)
+                                                k = 0
+                                                allrequestedok = True
+                                                for ch in channels:
+                                                    if ch in itemUpdated:
+                                                        od2 = itemUpdated[ch]
+                                                        if item in od2:
+                                                            v = od2[item]
+                                                            if v != requestedvalues[k]:
+                                                                allrequestedok = False
+                                                    k = k + 1
+                                                if allrequestedok:
+                                                    inst.waitstring = ''
                                 lock.release()
+
+                                
+
+
 
                   # fill out our log with the results
         except Exception as inst:
@@ -256,7 +295,7 @@ def queue_request(rol):
         if tmpstate == states.FAULT:
             return # no action
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
-    timeout = 3
+    timeout = 15
     try :
         result = future.result(timeout)
     except asyncio.TimeoutError:

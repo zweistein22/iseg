@@ -5,14 +5,15 @@ user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
-master = '0_1000'
+
 
 transitions="""
 {
 "TRANSITION" :[
-{"Off->On":  [{"GROUP":["Anodes"],"Control.voltageSet": [2075,2100,2085]},
+{"Off->On":  [
+              {"GROUP":["Anodes"],"Control.voltageSet": [23,24,49]},
               {"GROUP":["Anodes"],"Control.on": [1,1,1] },
-              {"GROUP":["Anodes"],"Event.endOfRamp": [1,1,1] }
+              {"GROUP":["Anodes"],"Status.ramping": [0,0,0] }
              ]
 },
 {"On>Off":  [{"GROUP":["Anodes"],"Control.on": [0,0,0] } ]
@@ -25,8 +26,8 @@ groups ="""
 {
  "GROUP": [
    {"Anodes": { "CHANNEL": ["0_0_0","0_0_1","0_0_2"]  ,"OPERATINGSTYLE": "slow" }},
-   {"CathodeStripes": { "CHANNEL": ["0_0_4","0_0_5"],  "Control.voltageSet": [75,80],  "OPERATINGSTYLE": "normal" }},
-   {"Window": { "CHANNEL": ["0_0_7"],  "Control.voltageSet": [-1000] , "OPERATINGSTYLE": "slow" }}
+   {"CathodeStripes": { "CHANNEL": ["0_0_4","0_0_5"],  "OPERATINGSTYLE": "normal" }},
+   {"Window": { "CHANNEL": ["0_0_7"], "OPERATINGSTYLE": "slow" }}
  ]
 }
 """

@@ -28,15 +28,20 @@ class PowerSupply(base.MLZDevice):
                 'None',
                 disallowed= (states.BUSY, states.FAULT, states.INIT,
                             states.UNKNOWN,)),
-         'getChannels':
+        'getChannels':
             Cmd('gets channel list for a group.',
                 str,listof(str),'group name','list of channels',
                 disallowed = (states.BUSY, states.FAULT, states.INIT,
                               states.UNKNOWN,)),
-         'applyTransition':
+        'applyTransition':
             Cmd('applies a transition like Off->On, On->Off etc.',
                 str,None, 'transition namé', 'None',
                 disallowed = (states.BUSY,)),
+
+        'getStatusJson':
+            Cmd('gets status for everything in a json string.',
+                None,str,'','status for everything',
+                disallowed = (states.UNKNOWN,)),
 
 
     }
@@ -53,19 +58,29 @@ class PowerSupply(base.MLZDevice):
    
  
     def init(self):
-        
+
+        self.jtransitions = json.loads(self.transitions)
         self.jgroups = json.loads(self.groups)
-        #checkchannels(groups)
-        self.joperatingstates = json.loads(self.operatingstates)
-
-        for group in self.jgroups:
-            #groupname = list(group.keys())[0]
-            print(group)
-
+        self.joperatingstyles = json.loads(self.operatingstyles)
         #checkoperatingstates(operatingstates)
+        self.channels_handled = self.checkchannels()
+        CC2xlib.globals.lock.acquire()
+        CC2xlib.globals.monitored_channels.append(self.channels_handled)
+        CC2xlib.globals.lock.release()
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
-        self.state = states.ON
-   
+        
+    def delete(self):
+        CC2xlib.globals.lock.acquire()
+        for ch in self.channels_handled:
+            if ch in CC2xlib.globals.monitored_channels:
+                CC2xlib.globals.monitored_channels.remove(ch)
+        CC2xlib.globals.lock.release()
+
+    def Power(self, value: bool) -> None:
+        arol = []
+        arol.append( CC2xlib.json_data.make_requestobject("setItem",a.master,"Control.power",value))
+        CC2xlib.globals.queue_request(arol)
+
     def setItemValue(self,groupname,item,value):
         rol = [] # request object list 
         channels = self.jgroup[groupname]['channels']
@@ -79,8 +94,9 @@ class PowerSupply(base.MLZDevice):
                         rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
         CC2xlib.globals.queue_request(rol)
 
-    def SetRampSpeed(self,arg):
-        pass
+    
+    def getStatusJson(self):
+        return ''
 
     def SetVoltage(self, arg):
         if len(arg) != 2 :
