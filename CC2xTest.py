@@ -36,6 +36,7 @@ class PowerSupply():
         #checkoperatingstates(operatingstates)
         self.channels_handled = self.checkchannels()
         self.waitstring =''
+        self.waitstringmintime = ''
         self.tw = None
         # access from other threads, so do the proper locking:
         # self.channels_handled
@@ -83,8 +84,9 @@ class PowerSupply():
 
     def Power(self, value: bool) -> None:
         rol = []
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power",''))
         rol.append( CC2xlib.json_data.make_requestobject("setItem",CC2xlib.globals.always_monitored[0],"Control.power",str(int(value))))
+        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power",''))
+
         CC2xlib.globals.queue_request(rol)
         
            
@@ -165,8 +167,8 @@ class PowerSupply():
 
     
     def ApplyTransition(self,toapply):
-        if (self.tw and self.tw.is_alive()):
-            self.tw._delete()
+        if (self.tw) and (self.tw.is_alive()):
+            self.tw.join()
 
         self.tw = threading.Thread(target=self.applytransitionworker, args=(toapply,))
         self.tw.start()
@@ -174,41 +176,76 @@ class PowerSupply():
 
 
     def applytransitionworker(self,toapply):
+        print("INIT:"+toapply)
         transitions = self.getTransitions()
         for tr in transitions:
             if toapply in tr:
                 workqueue = tr[toapply]
+                # here we clear itemUpdates dictionary from old values
                 for nextjob in workqueue:
-                    rol = []
                     for item in nextjob:
+                        if not (item.startswith("Control.") or item.startswith("Setup.") or item == "GROUP"):
+                            groups = nextjob['GROUP']
+                            for group in groups:
+                                channels = self.getChannels(group)
+                                for channel in channels:
+                                    CC2xlib.globals.lock.acquire()
+                                    if channel in CC2xlib.globals.itemUpdated:
+                                        obc =  CC2xlib.globals.itemUpdated[channel]
+                                        if item in obc:
+                                            del obc[item]
+                                    CC2xlib.globals.lock.release()    
+                #here we actually elaborate the workjobs
+                for nextjob in workqueue:
+                    
+                    for item in nextjob:
+                        if(str(item) == 'GROUP') :
+                            continue
+                        getrol = []
+                        # we wait for response, but by sending a "getItem" we force a response which would not come if condition already reached
+                        groups = nextjob['GROUP']
+                        for group in groups:
+                            channels = self.getChannels(group)
+                            j = 0
+                            for channel in channels:
+                                getrol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item,''))
+                                j = j + 1
+                        
+                            
+                        CC2xlib.globals.lock.acquire()
+                        self.waitstring =json.dumps(nextjob)
+                        CC2xlib.globals.lock.release()
+
+                        if not (str(item).startswith("Control.") or str(item).startswith("Setup.")):
+                            print("WAITFOR_CONDITION:"+str(nextjob))
+                        CC2xlib.globals.queue_request(getrol) 
+
                         if (str(item).startswith("Control.") or str(item).startswith("Setup.")):
+                            
                             values = nextjob[item]
                             groups = nextjob['GROUP']
                             for group in groups:
                                 channels = self.getChannels(group)
                                 j = 0
+                                rol = []
                                 for channel in channels:
-                                    rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,values[j]))
-                                    j = j + 1
-                            CC2xlib.globals.queue_request(rol) 
-                        elif str(item) != 'GROUP':
+                                   rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,values[j]))
+                                   j = j + 1
+                                print("QUEUE_REQUEST:"+str(nextjob))
+                                CC2xlib.globals.queue_request(rol) 
+                        rrlen = 1
+                        while rrlen:
+                            time.sleep(0.2)
                             CC2xlib.globals.lock.acquire()
-                            self.waitstring =json.dumps(nextjob)
+                            #print(self.waitstring)
+                            if not self.waitstring:
+                                rrlen = 0
                             CC2xlib.globals.lock.release()
-
-                            rrlen = 1
-                            
-                            while rrlen:
-                                CC2xlib.globals.lock.acquire()
-                                #print(self.waitstring)
-                                if not self.waitstring:
-                                    rrlen = 0
-                                CC2xlib.globals.lock.release()
-                                time.sleep(0.2)
-
-                            # wait for status or event
-                            pass
-        pass
+                               
+                        pass
+                print("FINISHED:"+toapply)
+                return
+        
      
    
 
@@ -216,24 +253,16 @@ class PowerSupply():
 a = PowerSupply()
 a.init()
 a.Power(True)
+time.sleep(1)
 a.ApplyTransition("Off->On")
-#rol = 
-#arol = []
-#arol.append(CC2xlib.json_data.make_requestobject("getItem",a.master,"Control.power",''))
-#arol.append( CC2xlib.json_data.make_requestobject("setItem",a.master,"Control.power",1))
-#CC2xlib.globals.queue_request(arol)
-
-#arol = []
-#arol.append( CC2xlib.json_data.make_requestobject("setItem","0_0_0","Control.channelEventMask",65535))
-#arol.append( CC2xlib.json_data.make_requestobject("setItem","0_0_0","Control.voltageSet",32))
-#arol.append( CC2xlib.json_data.make_requestobject("setItem","0_0_0","Control.on",1))
-#arol.append(a.rolSetVoltage(([30.0],["0_0_0"])))
-
-#CC2xlib.globals.queue_request(arol)
 
 
+for i in range(15):
+    time.sleep(1)
 
-for i in range(30):
+a.ApplyTransition("On->Off")
+
+for i in range(15):
     time.sleep(1)
 
 

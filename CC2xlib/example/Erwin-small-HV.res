@@ -11,12 +11,25 @@ transitions="""
 {
 "TRANSITION" :[
 {"Off->On":  [
-              {"GROUP":["Anodes"],"Control.voltageSet": [23,24,49]},
+              {"GROUP":["Window"],"Control.voltageSet": [130]},
+              {"GROUP":["Window"],"Control.on": [1] },
+              {"GROUP":["Window"],"Status.ramping": [0] },
+              {"GROUP":["Anodes"],"Control.voltageSet": [13,182,11]},
               {"GROUP":["Anodes"],"Control.on": [1,1,1] },
+              {"GROUP":["CathodeStripes"],"Control.voltageSet": [173,12]},
+              {"GROUP":["CathodeStripes"],"Control.on": [1,1]},
+              {"GROUP":["CathodeStripes"],"Status.ramping": [0,0]},
               {"GROUP":["Anodes"],"Status.ramping": [0,0,0] }
              ]
 },
-{"On>Off":  [{"GROUP":["Anodes"],"Control.on": [0,0,0] } ]
+{"On->Off":  [
+             {"GROUP":["Anodes"],"Control.on": [0,0,0] } ,
+             {"GROUP":["Anodes"],"Status.ramping": [0,0,0] },
+             {"GROUP":["CathodeStripes"],"Control.on": [0,0]},
+             {"GROUP":["Window"],"Control.on": [0] },
+             {"GROUP":["Window"],"Status.ramping": [0] },
+             {"GROUP":["CathodeStripes"],"Status.ramping": [0,0]}
+            ]
 }
 ]
 }

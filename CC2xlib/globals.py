@@ -45,8 +45,8 @@ def StatusJson()->str:
 async def heartbeat(connection):
     while True:
         try:
-            await connection.send('ping')
             await asyncio.sleep(15)
+            await connection.send('ping')
         except websockets.exceptions.ConnectionClosed:
             print('Connection with server closed.')
             break
@@ -91,7 +91,9 @@ async def listen(connection):
                 #print(adict)
                 if "trigger" in dictlist:
                     if dictlist["trigger"] == "false":
-                        print(dictlist)
+                        #print(dictlist)
+                        # this is our heartbeat, we don't need to print it
+                        pass
                     continue
                 
                 
@@ -106,6 +108,7 @@ async def listen(connection):
                         contentlist = adict["c"]
                         for c in contentlist:
                             lac = CC2xlib.json_data.getshortlac(c["d"]["p"])
+                            timestamp = c["d"]["t"]
                             someinstancesubscribed = 0
                             lock.acquire()
                             for inst in instances:
@@ -113,12 +116,13 @@ async def listen(connection):
                                     someinstancesubscribed = 1
                             lock.release()
                             if (someinstancesubscribed or (lac in always_monitored)):
-                                print(c["d"])
                                 command = c["d"]["i"]
+                                if not ( command in ["Status.currentMeasure","Status.heartBeat","System.time","Status.temperature0","Status.temperature1","Status.voltageMeasure"]):
+                                    print(c["d"])
                                 value = c["d"]["v"]
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
-                                if lac == "__":
+                                if lac == always_monitored[1]:
                                     maxconnections = 2
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):
                                         print("only "+str(maxconnections)+ " client(s) connection allowed.")
@@ -132,28 +136,47 @@ async def listen(connection):
                                 # this is a dict again, and that we will update
                                 ourdict[command] = vu
                                 itemUpdated[lac] = ourdict
+                                lock.release()
 
+                                if lac == always_monitored[0]:
+                                    continue
+                                lock.acquire()
                                 for inst in instances:
                                     if inst.waitstring :
+                                        if not inst.waitstringmintime:
+                                            inst.waitstringmintime = timestamp
                                         obj = json.loads(inst.waitstring)
+                                        allrequestedok = True
                                         for item in obj:
-                                            if item!='GROUP':
-                                                groupnames = obj['GROUP']
-                                                groupname = groupnames[0]
-                                                requestedvalues = obj[item]
-                                                channels = inst.getChannels(groupname)
-                                                k = 0
-                                                allrequestedok = True
-                                                for ch in channels:
-                                                    if ch in itemUpdated:
-                                                        od2 = itemUpdated[ch]
-                                                        if item in od2:
-                                                            v = od2[item]
-                                                            if v != requestedvalues[k]:
-                                                                allrequestedok = False
-                                                    k = k + 1
-                                                if allrequestedok:
-                                                    inst.waitstring = ''
+                                            if item =='GROUP':
+                                                continue
+
+                                            groupnames = obj['GROUP']
+                                            groupname = groupnames[0]
+                                            requestedvalues = obj[item]
+                                            channels = inst.getChannels(groupname)
+                                            k = 0
+                                               
+                                            for ch in channels:
+                                                if ch in itemUpdated:
+                                                    od2 = itemUpdated[ch]
+                                                    if item in od2:
+                                                        v = od2[item]
+                                                        if float(v['v']) != float(requestedvalues[k]):
+                                                            allrequestedok = False
+                                                        if (float(timestamp) < float(inst.waitstringmintime)):
+                                                            allrequestedok = False
+                                                    else :
+                                                        allrequestedok = False
+                                                        pass
+                                                else :
+                                                    allrequestedok = False
+                                                    pass
+                                                k = k + 1
+                                        if allrequestedok:
+                                            print("FINISHED:"+inst.waitstring )
+                                            inst.waitstring = ''
+                                            inst.waitstringmintime = ''
                                 lock.release()
 
                                 
