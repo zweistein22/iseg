@@ -20,8 +20,8 @@ from os.path import expanduser
 from entangle.core import states
 import threading
 
-import entangle.device.iseg.CC2xlib as CC2xlib
-import CC2xlib.json_data
+from entangle.device.iseg import CC2xlib
+from entangle.device.iseg.CC2xlib import json_data
  
 
 instances = []
@@ -35,10 +35,14 @@ websocket = None
 itemUpdated = {}
 state = states.UNKNOWN
 
-def StatusJson()->str:
+def StatusJson(channellist)->str:
     rv = ''
+    tmp = {}
     lock.acquire()
-    rv = json.dumps(itemUpdated)
+    for ch in channellist:
+        if ch in itemUpdated:
+           tmp[ch] = itemUpdated[ch]
+    rv = json.dumps(tmp)
     lock.release()
     return rv
 
@@ -56,9 +60,10 @@ async def heartbeat(connection):
             print(inst)  
             break
             
-    
+v_measure_received = 0    
 async def listen(connection):
     global sessionid,lock,itemUpdated,websocket,always_monitored,instances
+    global v_measure_received
     while True:
         try :
             response = await connection.recv()
@@ -117,8 +122,13 @@ async def listen(connection):
                             lock.release()
                             if (someinstancesubscribed or (lac in always_monitored)):
                                 command = c["d"]["i"]
-                                if not ( command in ["Status.currentMeasure","Status.heartBeat","System.time","Status.temperature0","Status.temperature1","Status.voltageMeasure"]):
-                                    print(c["d"])
+                                if not ( command in ["Status.currentMeasure","Status.heartBeat","System.time","Status.temperature0","Status.temperature1"]): #,"Status.voltageMeasure"]):
+                                    if command == "Status.voltageMeasure":
+                                        v_measure_received = v_measure_received + 1
+                                        if not (v_measure_received % 5) :
+                                            print(c["d"])
+                                    else:
+                                        print(c["d"])
                                 value = c["d"]["v"]
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
@@ -272,8 +282,8 @@ def monitor(address,user,password):
     lock.acquire()
     monitored.append(address)
     lock.release()
-    #loop.run_until_complete(getItemsInfo(address))
-    #loop.run_until_complete(getConfig())
+    loop.run_until_complete(getItemsInfo(address))
+    loop.run_until_complete(getConfig())
     try :
         future1 = asyncio.ensure_future(heartbeat(websocket))
         future2 = asyncio.ensure_future(listen(websocket))

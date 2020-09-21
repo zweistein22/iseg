@@ -11,7 +11,7 @@ transitions="""
 {
 "TRANSITION" :[
 {"Off->On":  [
-              {"GROUP":["Window"],"Control.voltageSet": [130]},
+              {"GROUP":["Window"],"Control.voltageSet": [-130]},
               {"GROUP":["Window"],"Control.on": [1] },
               {"GROUP":["Window"],"Status.ramping": [0] },
               {"GROUP":["Anodes"],"Control.voltageSet": [13,182,11]},
@@ -35,7 +35,7 @@ transitions="""
 }
 """
 
-groups ="""
+groups="""
 {
  "GROUP": [
    {"Anodes": { "CHANNEL": ["0_0_0","0_0_1","0_0_2"]  ,"OPERATINGSTYLE": "slow" }},
@@ -44,7 +44,7 @@ groups ="""
  ]
 }
 """
-operatingstyles = """
+operatingstyles="""
 {
   "OPERATNGSTYLE":
   [ 
