@@ -11,6 +11,7 @@ import asyncio
 import aiohttp
 import websockets
 import json
+import time
 from concurrent.futures import TimeoutError as ConnectionTimeoutError
 import base64
 import os
@@ -33,7 +34,9 @@ lock = threading.Lock()
 sessionid = ''
 websocket = None
 itemUpdated = {}
-state = states.UNKNOWN
+_state = (states.UNKNOWN)
+poweron = False
+
 
 def StatusJson(channellist)->str:
     rv = ''
@@ -47,12 +50,14 @@ def StatusJson(channellist)->str:
     return rv
 
 async def heartbeat(connection):
+    global _state
     while True:
         try:
             await asyncio.sleep(15)
             await connection.send('ping')
         except websockets.exceptions.ConnectionClosed:
-            print('Connection with server closed.')
+            _state = (states.FAULT, 'Connection with server closed.')
+            print(_state[1])
             break
         except Exception as inst:
             print(type(inst))    # the exception instance
@@ -62,7 +67,7 @@ async def heartbeat(connection):
             
 v_measure_received = 0    
 async def listen(connection):
-    global sessionid,lock,itemUpdated,websocket,always_monitored,instances
+    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron
     global v_measure_received
     while True:
         try :
@@ -132,6 +137,8 @@ async def listen(connection):
                                 value = c["d"]["v"]
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
+                                
+
                                 if lac == always_monitored[1]:
                                     maxconnections = 2
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):
@@ -149,6 +156,13 @@ async def listen(connection):
                                 lock.release()
 
                                 if lac == always_monitored[0]:
+                                    if command == "Control.power":
+                                        if not value or value == 0:
+                                            poweron = False
+                                            _state = (states.OFF,command)
+                                        else :
+                                            poweron = True
+                                            _state = (states.ON,command)
                                     continue
                                 lock.acquire()
                                 for inst in instances:
@@ -172,8 +186,16 @@ async def listen(connection):
                                                     od2 = itemUpdated[ch]
                                                     if item in od2:
                                                         v = od2[item]
-                                                        if float(v['v']) != float(requestedvalues[k]):
+                                                        if not v['v']:
                                                             allrequestedok = False
+                                                            continue
+                                                        if v['v'].isalpha():
+                                                            if str(v['v']) != str(requestedvalues[k]):
+                                                                 allrequestedok = False
+                                                        else:
+                                                            if float(v['v']) != float(requestedvalues[k]):
+                                                                 allrequestedok = False
+
                                                         if (float(timestamp) < float(inst.waitstringmintime)):
                                                             allrequestedok = False
                                                     else :
@@ -184,7 +206,8 @@ async def listen(connection):
                                                     pass
                                                 k = k + 1
                                         if allrequestedok:
-                                            print("FINISHED:"+inst.waitstring )
+                                            inst._state = (states.ON,"FINISHED:"+inst.waitstring)
+                                            print(inst._state[1])
                                             inst.waitstring = ''
                                             inst.waitstringmintime = ''
                                 lock.release()
@@ -209,7 +232,7 @@ async def login(address,user,password):
     timeout = 5
     global websocket
     global sessionid
-    global state
+    global _state,poweron
     try:
         websocket = await asyncio.wait_for(websockets.connect('ws://'+address+':8080'), timeout)
         cmd = CC2xlib.json_data.login(user,password)
@@ -218,16 +241,18 @@ async def login(address,user,password):
         adict = json.loads(response)
         lock.acquire()
         sessionid = adict["i"]
-        state = states.ON
+        if poweron:
+            _state =(states.ON,"CONNECTED : "+sessionid)
+        else :
+            _state =(states.OFF,"CONNECTED : "+sessionid)
         lock.release()
-        
+       
         
     except  ConnectionTimeoutError:
-        print("Connection timeout")
-        
         lock.acquire()
         websocket = None
-        state = states.FAULT
+        _state = (states.FAULT,"Connection timeout")
+        print(_state[1])
         lock.release()
    
 
@@ -269,15 +294,20 @@ async def execute_request(requestobjlist):
 monitored = []
 
 def monitor(address,user,password):
-    global websocket, state, loop
+    global websocket, _state, loop
     asyncio.set_event_loop(loop)
     #ping.ping(address)
     loop.run_until_complete(login(address,user,password))
-    tmpstate = states.UNKNOWN
+    tmpstate = (states.UNKNOWN)
     lock.acquire()
-    tmpstate = state
+    tmpstate = _state
     lock.release()
-    if tmpstate != states.ON:
+    connected = False
+    for st in tmpstate:
+        if st.startswith('CONNECTED'):
+            connected = True
+   
+    if not connected:
         return
     lock.acquire()
     monitored.append(address)
@@ -316,26 +346,34 @@ def add_monitor(ipaddress,user,password):
    
 
 def queue_request(rol):
-    global sessionid, state, loop
+    global sessionid, _state, loop
     if len(rol) == 0: return
     sid =''
-    tmpstate = states.UNKNOWN
+    tmpstate = (states.UNKNOWN)
     while sid == '':
         lock.acquire()
-        tmpstate = state
-        sid = sessionid
+        tmpstate = _state
+        sid = sessionid[:]
         lock.release()
-        if tmpstate == states.FAULT:
+        if states.FAULT in tmpstate :
             return # no action
+        time.sleep(1)
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
     timeout = 15
     try :
         result = future.result(timeout)
     except asyncio.TimeoutError:
-        print('The coroutine took too long, cancelling the task...')
+        lock.acquire()
+        _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
+        print(_state[1])
+        lock.release()
         future.cancel()
     except Exception as exc:
-        print(f'The coroutine raised an exception: {exc!r}')
+        lock.acquire()
+        _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
+        print(_state[1])
+        lock.release()
+       
     else:
         return result
 

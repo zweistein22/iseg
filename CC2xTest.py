@@ -7,7 +7,7 @@ import json
 sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '../../..')))
 import CC2xlib.globals
 import CC2xlib.json_data
-
+import CC2xlib.CC2xjsonhandling
 import CC2x
 
 
@@ -71,13 +71,26 @@ class PowerSupply(CC2x.PowerSupply):
 
 a = PowerSupply()
 
-a.power(True)
-time.sleep(1)
-a.applyTransition("Off->On")
-a.getstatusJson()
+time.sleep(8)
 
+a.power(True)
+
+time.sleep(1)
+t = a.getTransitionNames()
+a.setVoltage(([29],['0_0_0']))
+
+a.applyTransition("Off->On")
+for i in range(10):
+    time.sleep(1)
+
+statusjsonstr = a.getstatusJson()
+voltage004 = CC2xlib.CC2xjsonhandling.getStatusValue("0_0_4","Status.voltageMeasure",statusjsonstr)
+if voltage004:
+    print("\r\n"+"0_0_4"+ " : "+ "Status.voltageMeasure" +"="+ str(voltage004)+"\r\n")
 for i in range(15):
     time.sleep(1)
 
 a.applyTransition("On->Off")
+
+
 

@@ -22,6 +22,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CC2x.py" />
+    <Compile Include="CC2xlib\CC2xjsonhandling.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CC2xlib\globals.py" />
     <Compile Include="CC2xlib\json_data.py" />
     <Compile Include="CC2xlib\ping.py" />
