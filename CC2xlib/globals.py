@@ -100,8 +100,9 @@ async def listen(connection):
             for adict in dictlist:
                 #print(adict)
                 if "trigger" in dictlist:
+                    print(dictlist)
                     if dictlist["trigger"] == "false":
-                        #print(dictlist)
+                        
                         # this is our heartbeat, we don't need to print it
                         pass
                     continue
@@ -124,6 +125,7 @@ async def listen(connection):
                             for inst in instances:
                                 if lac in  inst.channels_handled:
                                     someinstancesubscribed = 1
+                                   
                             lock.release()
                             if (someinstancesubscribed or (lac in always_monitored)):
                                 command = c["d"]["i"]
@@ -157,12 +159,20 @@ async def listen(connection):
 
                                 if lac == always_monitored[0]:
                                     if command == "Control.power":
-                                        if not value or value == 0:
+                                        lock.acquire()
+                                        if  value == '0':
                                             poweron = False
                                             _state = (states.OFF,command)
                                         else :
                                             poweron = True
                                             _state = (states.ON,command)
+                                        for inst in instances:
+                                            inst._state = _state
+                                        if poweron :
+                                            print("POWER_ON")
+                                        else:
+                                            print("POWER_OFF")
+                                        lock.release()
                                     continue
                                 lock.acquire()
                                 for inst in instances:
@@ -206,7 +216,7 @@ async def listen(connection):
                                                     pass
                                                 k = k + 1
                                         if allrequestedok:
-                                            inst._state = (states.ON,"FINISHED:"+inst.waitstring)
+                                            inst._state = (inst._state[0],"FINISHED:"+inst.waitstring)
                                             print(inst._state[1])
                                             inst.waitstring = ''
                                             inst.waitstringmintime = ''
@@ -245,6 +255,8 @@ async def login(address,user,password):
             _state =(states.ON,"CONNECTED : "+sessionid)
         else :
             _state =(states.OFF,"CONNECTED : "+sessionid)
+        for inst in instances:
+            inst._state = _state
         lock.release()
        
         
@@ -327,7 +339,7 @@ def monitor(address,user,password):
 loop = None
 
 def add_monitor(ipaddress,user,password):
-    global loop
+    global loop,instances
     alreadyrunning = False;
     lmon = 0
     lock.acquire()
@@ -336,6 +348,15 @@ def add_monitor(ipaddress,user,password):
         alreadyrunning = True
     lock.release()
     if alreadyrunning: 
+        lock.acquire()
+        for inst in instances:
+            if inst._state[0] == states.INIT:
+                if poweron:
+                    inst._state = (states.ON,'')
+                else:
+                    inst._state = (states.OFF,'')
+
+        lock.release()
         return
     if lmon :
         raise Exception("Unsupported: multiple ip addresses")
@@ -346,7 +367,7 @@ def add_monitor(ipaddress,user,password):
    
 
 def queue_request(rol):
-    global sessionid, _state, loop
+    global sessionid, _state, loop,instances
     if len(rol) == 0: return
     sid =''
     tmpstate = (states.UNKNOWN)
@@ -357,7 +378,8 @@ def queue_request(rol):
         lock.release()
         if states.FAULT in tmpstate :
             return # no action
-        time.sleep(1)
+        if sid == '':
+            time.sleep(1)
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
     timeout = 15
     try :
@@ -365,12 +387,16 @@ def queue_request(rol):
     except asyncio.TimeoutError:
         lock.acquire()
         _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
+        for inst in instances:
+            inst._state = _state
         print(_state[1])
         lock.release()
         future.cancel()
     except Exception as exc:
         lock.acquire()
         _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
+        for inst in instances:
+            inst._state = _state
         print(_state[1])
         lock.release()
        

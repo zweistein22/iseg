@@ -45,5 +45,13 @@ def getChannels(groups:str,groupname:str)->List[str]:
                         rv.append(ch)
         return rv
 
+def getOperatingStyleNames(operatingstyles:str)->List[str]:
+        rv = []
+        jobjoperatingstyles = json.loads(operatingstyles)
+        groups = jobjoperatingstyles['OPERATNGSTYLE']
+        for group in groups:
+            for key,val in group.items():
+                rv.append(key)
+        return rv
 
 

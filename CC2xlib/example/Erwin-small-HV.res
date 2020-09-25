@@ -5,7 +5,8 @@ user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
-
+unitVoltage = 'V'
+unitCurrent = 'µA'
 
 transitions="""
 {
@@ -50,14 +51,14 @@ operatingstyles="""
   [ 
     {"normal": { "Control.voltageRampspeedUp" : 5, 
                 "Control.voltageRampspeedDown" :10,
-                "Control.currentSet" : 1,
-                "Setup.delayedTripTime" : 100 
+                "Control.currentSet" : 3,
+                "Setup.delayedTripTime" : 222 
 
      }},
 	  {"slow": {    "Control.voltageRampspeedUp" : 2,
                     "Control.voltageRampspeedDown" : 5,
-                    "Control_currentSet" : 1,
-                    "Setup_delayedTripTime" : 100
+                    "Control.currentSet" : 4,
+                    "Setup.delayedTripTime" : 111
 	   }}
    ]
 }

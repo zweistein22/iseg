@@ -55,18 +55,7 @@ class PowerSupply(CC2x.PowerSupply):
         return rol
     
 
-    def rolAddOperatingStyle(self,groupname):
-        rol = [] # request object list 
-        channels = self.jgroup[groupname]['CHANNEL']
-        rampstyle = self.jgroup[groupname]['OPERATINGSTYLE']
-        for rstyle in self.joperatingstates :
-            stylename = list(rstyle.keys())[0]
-            if stylename == rampstyle :
-                for k, v in rstyle[stylename].items():
-                    item = k
-                    for channel in channels :
-                        rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
-        return rol
+    
 
 
 a = PowerSupply()
@@ -83,7 +72,7 @@ a.applyTransition("Off->On")
 for i in range(10):
     time.sleep(1)
 
-statusjsonstr = a.getstatusJson()
+statusjsonstr = a.read_jsonstatus()
 voltage004 = CC2xlib.CC2xjsonhandling.getStatusValue("0_0_4","Status.voltageMeasure",statusjsonstr)
 if voltage004:
     print("\r\n"+"0_0_4"+ " : "+ "Status.voltageMeasure" +"="+ str(voltage004)+"\r\n")

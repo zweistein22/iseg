@@ -1,6 +1,6 @@
-<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!-- iCS configuration -->
-<icsConfig lastChanged="2020/09/17 09:26:37" iCSserial="5230306" iCSversion="2.4.0 20190521_1212" lastChangedBy="admin">
+<icsConfig iCSserial="5230306" lastChangedBy="CLI: iCStool.php" lastChanged="2020/09/25 10:17:36" iCSversion="">
     <preferences>
         <sound>false</sound>
         <host>
@@ -17,9 +17,10 @@
         </camera>
     </preferences>
     <hardwareConfig>
-        <device line="0" firmwareName="ECH4XA" firmwareRelease="04.22" type="crate" serial="5230306" modelCatalog="" address="1000" title="Master" id="0-1000" model="CC24">
+        
+    <device line="0" serial="5230306" modelCatalog="" title="Master" type="crate" address="1000" model="CC24" id="0-1000" firmwareName="ECH4XA" firmwareRelease="04.22">
             <slot id="0">
-                <device address="0" cUnit="µA" digitalFilter="64" adcSampleRate="50" model="EH082030x1040200203" line="0" firmwareName="E08C2" cResolution="5" cUnitLCR="µA" vUnit="V" title="7800361" type="module" serial="7800361" modelCatalog="EH082030x104" id="0-0" vResolution="5" firmwareRelease="04.73" cResolutionLCR="5">
+                <device cUnitLCR="µA" vUnit="V" vResolution="4" address="0" digitalFilter="64" firmwareRelease="04.73" adcSampleRate="50" title="7800361" type="module" cResolution="4" firmwareName="E08C2" cUnit="mA" cResolutionLCR="4" serial="7800361" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-0">
                     <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
@@ -46,7 +47,7 @@
                 </device>
             </slot>
             <slot id="1">
-                <device address="1" cUnit="mA" digitalFilter="64" adcSampleRate="50" model="EH082030x1040200203" line="0" firmwareName="E08C2" cResolution="4" cUnitLCR="µA" vUnit="V" title="7800362" type="module" serial="7800362" modelCatalog="EH082030x104" id="0-1" vResolution="4" firmwareRelease="04.73" cResolutionLCR="4">
+                <device cUnitLCR="µA" vUnit="V" vResolution="4" address="1" digitalFilter="64" firmwareRelease="04.73" adcSampleRate="50" title="7800362" type="module" cResolution="4" firmwareName="E08C2" cUnit="mA" cResolutionLCR="4" serial="7800362" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-1">
                     <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
@@ -72,14 +73,7 @@
                     </eventHandling>
                 </device>
             </slot>
-            <eventHandling>
-                <mainsNotGood/>
-                <supplyNotGood/>
-                <batteryNotGood/>
-                <temperatureNotGood/>
-            </eventHandling>
-        </device>
-    </hardwareConfig>
+        </device></hardwareConfig>
     <hardwareDetect version="2.0">
         <interfaces>
             <interface line="6" type="serial" name="ttymxc0"/>
@@ -89,9 +83,9 @@
             <interface line="1" type="can" name="can1"/>
             <interface line="0" type="can" name="can0"/>
         </interfaces>
-        <device line="0" firmwareName="ECH4XA" firmwareRelease="04.22" type="crate" serial="5230306" address="1000" title="Master" modelCatalog="" id="0-1000" model="CC24">
+        <device line="0" serial="5230306" modelCatalog="" title="Master" type="crate" address="1000" model="CC24" id="0-1000" firmwareName="ECH4XA" firmwareRelease="04.22">
             <slot id="0">
-                <device line="0" vUnit="V" digitalFilter="64" cUnitLCR="µA" firmwareName="E08C2" firmwareRelease="04.73" type="module" serial="7800361" cResolution="4" address="0" title="7800361" cUnit="mA" adcSampleRate="50" id="0-0" vResolution="4" cResolutionLCR="4" model="EH082030x1040200203">
+                <device cUnitLCR="µA" vUnit="V" vResolution="4" address="0" digitalFilter="64" firmwareRelease="04.73" adcSampleRate="50" title="7800361" type="module" cResolution="4" firmwareName="E08C2" cUnit="mA" cResolutionLCR="4" serial="7800361" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-0">
                     <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
@@ -118,7 +112,7 @@
                 </device>
             </slot>
             <slot id="1">
-                <device line="0" vUnit="V" digitalFilter="64" cUnitLCR="µA" firmwareName="E08C2" firmwareRelease="04.73" type="module" serial="7800362" cResolution="4" address="1" title="7800362" cUnit="mA" adcSampleRate="50" id="0-1" vResolution="4" cResolutionLCR="4" model="EH082030x1040200203">
+                <device cUnitLCR="µA" vUnit="V" vResolution="4" address="1" digitalFilter="64" firmwareRelease="04.73" adcSampleRate="50" title="7800362" type="module" cResolution="4" firmwareName="E08C2" cUnit="mA" cResolutionLCR="4" serial="7800362" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-1">
                     <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
                     <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
@@ -229,126 +223,126 @@
     <channelProfiles>
         <channelProfile title="test" id="5f326d2318c53">
             <channel id="0_0_0">
-                <item value="1" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="1" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_1">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_2">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_3">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_4">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_5">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_6">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_7">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
         </channelProfile>
         <channelProfile title="test_1" id="5f329060c8666">
             <channel id="0_0_0">
-                <item value="1" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="1" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_1">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_2">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_3">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_4">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_5">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_6">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_0_7">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.00000" unit="V" id="Control.voltageSet"/>
-                <item value="1.00000" unit="µA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.00000" id="Control.voltageSet"/>
+                <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_0">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_1">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_2">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_3">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_4">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_5">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_6">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
             <channel id="0_1_7">
-                <item value="" unit="" id="Control.on"/>
-                <item value="0.0000" unit="V" id="Control.voltageSet"/>
-                <item value="0.0010" unit="mA" id="Control.currentSet"/>
+                <item unit="" value="" id="Control.on"/>
+                <item unit="V" value="0.0000" id="Control.voltageSet"/>
+                <item unit="mA" value="0.0010" id="Control.currentSet"/>
             </channel>
         </channelProfile>
     </channelProfiles>
@@ -525,4 +519,8 @@
             </ace>
         </acl>
     </icsAccess>
+    <autoConfig>
+        <enable>true</enable>
+    </autoConfig>
+    <scripts/>
 </icsConfig>

@@ -14,7 +14,7 @@ from typing import List
 
 from entangle import base
 from entangle.core.defs import boolean
-from entangle.core import states , Prop, Cmd, pair,listof
+from entangle.core import states , Prop, Attr, Cmd, pair,listof
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
@@ -31,7 +31,7 @@ class PowerSupply(base.MLZDevice):
                 pair(listof(float), listof(str)) , None,
                 '[channel1,channel2,...][voltage1,voltage2,..]',
                 'None',
-                disallowed= (states.BUSY, states.FAULT, states.INIT,
+                disallowed= (states.BUSY, states.FAULT, states.INIT, states.OFF,
                             states.UNKNOWN,)),
         'getGroupNames':
             Cmd('gets group names.',
@@ -53,12 +53,9 @@ class PowerSupply(base.MLZDevice):
         'applyTransition':
             Cmd('applies a transition like Off->On, On->Off etc.',
                 str,None, 'transition namé', 'None',
-                disallowed = (states.BUSY,states.FAULT,states.INIT)),
+                disallowed = (states.BUSY,states.FAULT,states.INIT,states.OFF)),
 
-        'getstatusJson':
-            Cmd('gets status for everything in a json string.',
-                None,str,'','status for everything',
-                disallowed = (states.UNKNOWN,states.FAULT,states.INIT)),
+       
 
     }
 
@@ -70,17 +67,23 @@ class PowerSupply(base.MLZDevice):
         'transitions': Prop(str, 'transitions.'),
         'groups': Prop(str, 'groups.'),
         'operatingstyles': Prop(str, 'operatingstyles.'),
-      }
-
+         'unitVoltage': Prop(str, 'one of [V kV].',default='V'),
+         'unitCurrent': Prop(str, 'on of [µA mA A].',default='mA'),
+     }
    
+    attributes = {
+         'jsonstatus':   Attr(str,'',writable = False,memorized = False),
+    }
  
     def init(self):
+        
         self._state = (states.INIT,self.address)
         #checkoperatingstates(operatingstates)
         self.channels_handled = self.checkchannels()
         self.waitstring =''
         self.waitstringmintime = ''
         self.tw = None
+
         # accessed also from other thread, so do the proper locking:
         # self.channels_handled
         # self.waitstring
@@ -91,8 +94,59 @@ class PowerSupply(base.MLZDevice):
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
         
         rol = []
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power",''))
+        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
         CC2xlib.globals.queue_request(rol)
+        
+        self.applyOperatingStyles()
+        
+
+    def applyOperatingStyles(self):
+        groupnames = CC2xlib.CC2xjsonhandling.getGroupNames(self.groups)
+        for groupname in groupnames:
+            self.rolAddOperatingStyle(groupname)
+       
+    
+    def rolAddOperatingStyle(self,groupname:str):
+              
+        channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
+        jgroups = json.loads(self.groups)
+        for group in jgroups['GROUP']:
+            for key,val in group.items():
+                if key == groupname:
+                    operatingstyle = val["OPERATINGSTYLE"]
+        
+        jstyles = json.loads(self.operatingstyles)
+
+        for style in jstyles['OPERATNGSTYLE']:
+            for k in style:
+                if k == operatingstyle:
+                    items = style[k]
+                    for item,v in items.items():
+                        for channel in channels:
+                            rol = []
+                            
+                            if any(c.isalpha() for c in str(v)):
+                                strvalue = str(v)
+                            else:
+                                strvalue = str(float(v))
+                            
+                            
+                            unit = ''
+                            cmd = str(item).lower()
+                            if cmd.find("ramp") == -1:
+                                if cmd.find("voltage") >= 0:
+                                    #unit = self.unitVoltage
+                                    pass
+                                if cmd.find("current") >= 0:
+                                    #unit = self.unitCurrent
+                                    pass
+                            rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,strvalue,unit))
+                            rol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item))
+                            CC2xlib.globals.queue_request(rol)
+                            pass
+                            
+        
+
 
     def __delete__(self):
         self.delete()
@@ -143,7 +197,7 @@ class PowerSupply(base.MLZDevice):
     def power(self, value: bool) -> None:
         rol = []
         rol.append( CC2xlib.json_data.make_requestobject("setItem",CC2xlib.globals.always_monitored[0],"Control.power",str(int(value))))
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power",''))
+        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
         CC2xlib.globals.queue_request(rol)
 
     def getGroupNames(self)->List[str]:
@@ -187,16 +241,19 @@ class PowerSupply(base.MLZDevice):
         CC2xlib.globals.queue_request(rol) 
         
 
-    def getstatusJson(self):
+    def read_jsonstatus(self):
         ours = CC2xlib.globals.StatusJson(self.channels_handled)
         return ours
 
+    def get_jsonstatus_unit(self):
+        return ''
     def state(self):
        return self._state
 
     def applyTransition(self,toapply):
         if (self.tw) and (self.tw.is_alive()):
             self.tw.join()
+     
 
         self.tw = threading.Thread(target=self.applytransitionworker, args=(toapply,))
         self.tw.start()
@@ -223,7 +280,7 @@ class PowerSupply(base.MLZDevice):
                             channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
                             j = 0
                             for channel in channels:
-                                getrol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item,''))
+                                getrol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item))
                                 j = j + 1
                         
                             

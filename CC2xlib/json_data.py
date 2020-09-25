@@ -20,7 +20,7 @@ def getshortlac(jsonobj):
     return rv
     
 
-def make_requestobject(command,lac,itemtype,val="",unit=""):
+def make_requestobject(command,lac,itemtype,val='',unit=''):
     s = lac.split("_")
     line = ''
     address = ''
@@ -33,16 +33,40 @@ def make_requestobject(command,lac,itemtype,val="",unit=""):
         channel = s[2]
     reqobj = {}
     reqobj["c"] = command
-    reqobj["p"] = {
-        "p": {
-            "l": line, 
-		    "a": address,
-			"c": channel
-		},
-		"i": itemtype,
-		"v": val,
-		"u": unit
-    }
+
+    if not val :
+        reqobj["p"] = {
+            "p": {
+                "l": line, 
+		        "a": address,
+			    "c": channel
+		    },
+		    "i": itemtype
+		    
+        }
+    elif not unit: 
+        reqobj["p"] = {
+            "p": {
+                "l": line, 
+		        "a": address,
+			    "c": channel
+		    },
+		    "i": itemtype,
+		    "v": val
+        }
+
+    else:
+        reqobj["p"] = {
+            "p": {
+                "l": line, 
+		        "a": address,
+			    "c": channel
+		    },
+		    "i": itemtype,
+		    "v": val,
+		    "u": unit
+        }
+
 
     return reqobj
 
