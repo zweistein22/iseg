@@ -66,7 +66,7 @@ a.power(True)
 
 time.sleep(1)
 t = a.getTransitionNames()
-a.setVoltage(([29],['0_0_0']))
+#a.setVoltage(([29],['0_0_0']))
 
 a.applyTransition("Off->On")
 for i in range(10):

@@ -67,8 +67,6 @@ class PowerSupply(base.MLZDevice):
         'transitions': Prop(str, 'transitions.'),
         'groups': Prop(str, 'groups.'),
         'operatingstyles': Prop(str, 'operatingstyles.'),
-         'unitVoltage': Prop(str, 'one of [V kV].',default='V'),
-         'unitCurrent': Prop(str, 'on of [µA mA A].',default='mA'),
      }
    
     attributes = {
@@ -97,53 +95,54 @@ class PowerSupply(base.MLZDevice):
         rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
         CC2xlib.globals.queue_request(rol)
         
-        self.applyOperatingStyles()
+        self.setOperatingStylesOrCommand()
         
 
-    def applyOperatingStyles(self):
+    def setOperatingStylesOrCommand(self):
         groupnames = CC2xlib.CC2xjsonhandling.getGroupNames(self.groups)
         for groupname in groupnames:
-            self.rolAddOperatingStyle(groupname)
+            self.rolsetOperatingStyleOrCommand(groupname)
        
     
-    def rolAddOperatingStyle(self,groupname:str):
+    def rolsetOperatingStyleOrCommand(self,groupname:str):
               
         channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
         jgroups = json.loads(self.groups)
         for group in jgroups['GROUP']:
             for key,val in group.items():
                 if key == groupname:
-                    operatingstyle = val["OPERATINGSTYLE"]
-        
-        jstyles = json.loads(self.operatingstyles)
+                    for cmds in val:
+                        if cmds == "OPERATINGSTYLE":
+                            operatingstyle = val["OPERATINGSTYLE"]
+                            jstyles = json.loads(self.operatingstyles)
+                            for style in jstyles['OPERATNGSTYLE']:
+                                for k in style:
+                                    if k == operatingstyle:
+                                        items = style[k]
+                                        for item,v in items.items():
+                                            for channel in channels:
+                                                rol = []
+                                                if any(c.isalpha() for c in str(v)):
+                                                    strvalue = str(v)
+                                                else:
+                                                    strvalue = str(float(v))
+                                                rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,strvalue))
+                                                CC2xlib.globals.queue_request(rol)
+                                                rol = []
+                                                rol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item))
+                                                CC2xlib.globals.queue_request(rol)
+                                               
+                        elif cmds != 'CHANNEL':
+                            for channel in channels:
+                                rol = []
+                                cmdvalue = val[cmds]
+                                rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,cmds,cmdvalue))
+                                CC2xlib.globals.queue_request(rol)
+                                rol = []
+                                rol.append(CC2xlib.json_data.make_requestobject("getItem",channel,cmds))
+                                CC2xlib.globals.queue_request(rol)
+                            
 
-        for style in jstyles['OPERATNGSTYLE']:
-            for k in style:
-                if k == operatingstyle:
-                    items = style[k]
-                    for item,v in items.items():
-                        for channel in channels:
-                            rol = []
-                            
-                            if any(c.isalpha() for c in str(v)):
-                                strvalue = str(v)
-                            else:
-                                strvalue = str(float(v))
-                            
-                            
-                            unit = ''
-                            cmd = str(item).lower()
-                            if cmd.find("ramp") == -1:
-                                if cmd.find("voltage") >= 0:
-                                    #unit = self.unitVoltage
-                                    pass
-                                if cmd.find("current") >= 0:
-                                    #unit = self.unitCurrent
-                                    pass
-                            rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,strvalue,unit))
-                            rol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item))
-                            CC2xlib.globals.queue_request(rol)
-                            pass
                             
         
 
@@ -293,7 +292,13 @@ class PowerSupply(base.MLZDevice):
                             print(self.statusstr)
                         CC2xlib.globals.lock.release()
 
-                        CC2xlib.globals.queue_request(getrol) 
+                        waitforanswer = True
+                        
+                        if str(item) == "Control.clearEvents":
+                            waitforanswer = False
+
+                        if waitforanswer:
+                              CC2xlib.globals.queue_request(getrol) 
 
                         if (str(item).startswith("Control.") or str(item).startswith("Setup.")):
                             
@@ -312,9 +317,14 @@ class PowerSupply(base.MLZDevice):
                                 print(self.statusstr)
                                 CC2xlib.globals.lock.release()
                                 CC2xlib.globals.queue_request(rol) 
+                        if not waitforanswer:
+                            CC2xlib.globals.lock.acquire()
+                            self.waitstring = ''
+                            CC2xlib.globals.lock.release()
+
                         rrlen = 1
                         while rrlen:
-                            time.sleep(2)
+                            time.sleep(2)  # a bit hacky!
                             CC2xlib.globals.lock.acquire()
                             if not self.waitstring:
                                 rrlen = 0

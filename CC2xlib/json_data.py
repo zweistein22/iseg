@@ -33,41 +33,17 @@ def make_requestobject(command,lac,itemtype,val='',unit=''):
         channel = s[2]
     reqobj = {}
     reqobj["c"] = command
-
-    if not val :
-        reqobj["p"] = {
-            "p": {
-                "l": line, 
-		        "a": address,
-			    "c": channel
-		    },
-		    "i": itemtype
-		    
-        }
-    elif not unit: 
-        reqobj["p"] = {
-            "p": {
-                "l": line, 
-		        "a": address,
-			    "c": channel
-		    },
-		    "i": itemtype,
-		    "v": val
-        }
-
-    else:
-        reqobj["p"] = {
-            "p": {
-                "l": line, 
-		        "a": address,
-			    "c": channel
-		    },
-		    "i": itemtype,
-		    "v": val,
-		    "u": unit
-        }
-
-
+    
+    reqobj["p"] = {
+        "p": {
+            "l": line, 
+		    "a": address,
+			"c": channel
+		},
+		"i": itemtype,
+		"v": val,
+		"u": unit
+    }
     return reqobj
 
 
@@ -120,5 +96,8 @@ def request(sessionid,requestpacketobjects):
     data['c'] = requestpacketobjects
     data['r'] = "websocket"
     return json.dumps(data)
+
+
+
 
 

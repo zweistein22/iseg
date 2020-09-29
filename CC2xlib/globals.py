@@ -30,7 +30,7 @@ instances = []
 always_monitored = ['0_1000_','__']
 
 lock = threading.Lock()
-
+last_reqobj = ''
 sessionid = ''
 websocket = None
 itemUpdated = {}
@@ -50,11 +50,17 @@ def StatusJson(channellist)->str:
     return rv
 
 async def heartbeat(connection):
-    global _state
+    global _state, sessionid, last_reqobj
     while True:
         try:
             await asyncio.sleep(15)
-            await connection.send('ping')
+            rol = []
+            lock.acquire()
+            rol.append(json_data.make_requestobject("getUpdate", always_monitored[0],''))
+            r = json_data.request(sessionid,rol)
+            last_reqobj = r
+            lock.release()
+            await connection.send(r)
         except websockets.exceptions.ConnectionClosed:
             _state = (states.FAULT, 'Connection with server closed.')
             print(_state[1])
@@ -67,11 +73,12 @@ async def heartbeat(connection):
             
 v_measure_received = 0    
 async def listen(connection):
-    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron
+    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron,last_reqobj
     global v_measure_received
     while True:
         try :
             response = await connection.recv()
+            #print("\r\n"+response)
             
             dictlist = json.loads(response)
 
@@ -100,21 +107,23 @@ async def listen(connection):
             for adict in dictlist:
                 #print(adict)
                 if "trigger" in dictlist:
-                    print(dictlist)
                     if dictlist["trigger"] == "false":
-                        
-                        # this is our heartbeat, we don't need to print it
-                        pass
-                    continue
-                
-                
+                        print("\r\n")
+                        print("REQUEST\r\n")
+                        lock.acquire()
+                        print(last_reqobj)
+                        lock.release()
+                        print("RESPONSE\r\n")
+                        print(dictlist)
+                        print("\r\n")
+
                 if "t" in adict:
-                    if adict["t"] == "info":
+                    #if adict["t"] == "info":
                         #print(adict)
-                        pass
-                    if adict["t"] == "response":
+                        
+                    #if adict["t"] == "response":
                         #print(adict)
-                        pass
+                        
                     if "c" in adict:
                         contentlist = adict["c"]
                         for c in contentlist:
@@ -129,13 +138,25 @@ async def listen(connection):
                             lock.release()
                             if (someinstancesubscribed or (lac in always_monitored)):
                                 command = c["d"]["i"]
-                                if not ( command in ["Status.currentMeasure","Status.heartBeat","System.time","Status.temperature0","Status.temperature1"]): #,"Status.voltageMeasure"]):
+                                if not ( command in ["Status.voltageTerminalMeasure","Status.currentMeasure","Status.heartBeat","System.time","Status.temperature0","Status.temperature1"]): #,"Status.voltageMeasure"]):
                                     if command == "Status.voltageMeasure":
                                         v_measure_received = v_measure_received + 1
                                         if not (v_measure_received % 5) :
                                             print(c["d"])
+                                            pass
                                     else:
                                         print(c["d"])
+                                if command in ["Status.inputError"]:
+                                    print("\r\n")
+                                    print("REQUEST\r\n")
+                                    lock.acquire()
+                                    print(last_reqobj)
+                                    lock.release()
+                                    print("RESPONSE\r\n")
+                                    print(dictlist)
+                                    print("\r\n")
+                                    
+
                                 value = c["d"]["v"]
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
@@ -169,9 +190,9 @@ async def listen(connection):
                                         for inst in instances:
                                             inst._state = _state
                                         if poweron :
-                                            print("POWER_ON")
+                                            print("Power is On")
                                         else:
-                                            print("POWER_OFF")
+                                            print("Power is Off")
                                         lock.release()
                                     continue
                                 lock.acquire()
@@ -297,8 +318,11 @@ async def getConfig():
                
 
 async def execute_request(requestobjlist):
-    global websocket, sessionid
+    global websocket, sessionid, last_reqobj
     cmd = CC2xlib.json_data.request(sessionid, requestobjlist)
+    lock.acquire()
+    last_reqobj = cmd
+    lock.release()
     await websocket.send(cmd)
     return True
         
@@ -367,7 +391,7 @@ def add_monitor(ipaddress,user,password):
    
 
 def queue_request(rol):
-    global sessionid, _state, loop,instances
+    global sessionid, _state, loop, instances
     if len(rol) == 0: return
     sid =''
     tmpstate = (states.UNKNOWN)
@@ -380,6 +404,7 @@ def queue_request(rol):
             return # no action
         if sid == '':
             time.sleep(1)
+    
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
     timeout = 15
     try :
