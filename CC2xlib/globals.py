@@ -280,6 +280,11 @@ async def logout():
         return
     cmd = CC2xlib.json_data.logout(sessionid)
     await websocket.send(cmd)
+    if poweron:
+        _state =(states.ON,"DISCONNECTED")
+    else:
+        _state =(states.OFF,"DISCONNECTED")
+    print(_state)
 
 async def login(address,user,password):
     timeout = 5
@@ -385,8 +390,9 @@ def monitor(address,user,password):
     lock.acquire()
     monitored.remove(address)
     lock.release()
-    loop.close()
+    loop.stop()
     print("monitor() exiting..")
+    loop = None
     return
 
 loop = None
@@ -424,6 +430,8 @@ def queue_request(rol):
     if len(rol) == 0: return
     if  ctrlcreceived:
         return
+    if not loop:
+        return
     sid =''
     tmpstate = (states.UNKNOWN)
     while sid == '':
@@ -437,7 +445,7 @@ def queue_request(rol):
             time.sleep(1)
     
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
-    timeout = 30
+    timeout = 10
     try :
         result = future.result(timeout)
     except asyncio.TimeoutError:
@@ -445,7 +453,7 @@ def queue_request(rol):
         _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
         for inst in instances:
             inst._state = _state
-        print(_state[1])
+        #print(_state[1])
         lock.release()
         future.cancel()
     except Exception as exc:
@@ -453,7 +461,7 @@ def queue_request(rol):
         _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
         for inst in instances:
             inst._state = _state
-        print(_state[1])
+        #print(_state[1])
         lock.release()
        
     else:

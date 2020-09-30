@@ -155,6 +155,7 @@ class PowerSupply(base.MLZDevice):
 
 
     def __delete__(self):
+        print("CC2x.__delete__()")
         self.delete()
 
     def delete(self):
