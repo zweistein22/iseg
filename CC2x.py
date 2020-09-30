@@ -7,6 +7,7 @@
 #* by the Free Software Foundation; *
 # **************************************************************************
 
+
 import json
 import threading
 import time
@@ -19,6 +20,8 @@ from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
 import entangle.device.iseg.CC2xlib.CC2xjsonhandling
+
+
 
 
 
@@ -91,11 +94,15 @@ class PowerSupply(base.MLZDevice):
         CC2xlib.globals.lock.release()
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
         
-        rol = []
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
-        CC2xlib.globals.queue_request(rol)
         
+        #rol = []
+        #rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
+        #CC2xlib.globals.queue_request(rol)
+        
+        self.On()
         self.setOperatingStylesOrCommand()
+        
+        
         
 
     def setOperatingStylesOrCommand(self):
@@ -157,6 +164,7 @@ class PowerSupply(base.MLZDevice):
                 CC2xlib.globals.instances.remove(i)
         CC2xlib.globals.lock.release()
 
+
     
     def checkchannels(self):
             rv = []
@@ -189,6 +197,7 @@ class PowerSupply(base.MLZDevice):
 
     def On(self):
         self.power(True)
+        time.sleep(2)
 
     def Off(self):
         self.power(False)
@@ -196,7 +205,7 @@ class PowerSupply(base.MLZDevice):
     def power(self, value: bool) -> None:
         rol = []
         rol.append( CC2xlib.json_data.make_requestobject("setItem",CC2xlib.globals.always_monitored[0],"Control.power",str(int(value))))
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
+     #   rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
         CC2xlib.globals.queue_request(rol)
 
     def getGroupNames(self)->List[str]:
@@ -270,12 +279,15 @@ class PowerSupply(base.MLZDevice):
                 for nextjob in workqueue:
                     
                     for item in nextjob:
+                        
                         if(str(item) == 'GROUP') :
                             continue
                         getrol = []
                         # we wait for response, but by sending a "getItem" we force a response which would not come if condition already reached
                         groups = nextjob['GROUP']
                         for groupname in groups:
+                            if CC2xlib.globals.ctrlcreceived:
+                                return
                             channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
                             j = 0
                             for channel in channels:
@@ -344,5 +356,6 @@ class PowerSupply(base.MLZDevice):
         
      
    
+
 
 

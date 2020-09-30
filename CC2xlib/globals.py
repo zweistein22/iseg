@@ -6,7 +6,9 @@
 #* it under the terms of the GNU General Public License v3 as published *
 #* by the Free Software Foundation; *
 # **************************************************************************
-
+import atexit
+import signal
+import sys
 import asyncio
 import aiohttp
 import websockets
@@ -49,11 +51,15 @@ def StatusJson(channellist)->str:
     lock.release()
     return rv
 
+ctrlcreceived = 0
+
 async def heartbeat(connection):
-    global _state, sessionid, last_reqobj
+    global _state, sessionid, last_reqobj, ctrlcreceived
     while True:
         try:
-            await asyncio.sleep(15)
+            await asyncio.sleep(8)
+            if ctrlcreceived:
+                break
             rol = []
             lock.acquire()
             rol.append(json_data.make_requestobject("getUpdate", always_monitored[0],''))
@@ -70,12 +76,15 @@ async def heartbeat(connection):
             print(inst.args)     # arguments stored in .args
             print(inst)  
             break
-            
+    return
+
 v_measure_received = 0    
 async def listen(connection):
-    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron,last_reqobj
+    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron,last_reqobj, ctrlcreceived
     global v_measure_received
     while True:
+        if ctrlcreceived:
+            return
         try :
             response = await connection.recv()
             #print("\r\n"+response)
@@ -122,10 +131,11 @@ async def listen(connection):
                         #print(adict)
                         
                     #if adict["t"] == "response":
-                        #print(adict)
+                    #    print(adict)
                         
                     if "c" in adict:
                         contentlist = adict["c"]
+                        #print("contentlist len="+str(len(contentlist)))
                         for c in contentlist:
                             lac = CC2xlib.json_data.getshortlac(c["d"]["p"])
                             timestamp = c["d"]["t"]
@@ -155,19 +165,16 @@ async def listen(connection):
                                     print("RESPONSE\r\n")
                                     print(dictlist)
                                     print("\r\n")
-                                    
-
                                 value = c["d"]["v"]
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
-                                
-
                                 if lac == always_monitored[1]:
                                     maxconnections = 2
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):
                                         print("only "+str(maxconnections)+ " client(s) connection allowed.")
+                                        await logout()
                                         await connection.close()
-                                    continue
+                                        break
                                 lenrr = 0
                                 ourdict = {}
                                 lock.acquire()
@@ -217,17 +224,20 @@ async def listen(connection):
                                                     od2 = itemUpdated[ch]
                                                     if item in od2:
                                                         v = od2[item]
-                                                        if not v['v']:
-                                                            allrequestedok = False
-                                                            continue
-                                                        if v['v'].isalpha():
-                                                            if str(v['v']) != str(requestedvalues[k]):
-                                                                 allrequestedok = False
-                                                        else:
-                                                            if float(v['v']) != float(requestedvalues[k]):
-                                                                 allrequestedok = False
+                                                        try:
+                                                            if not v['v']:
+                                                                allrequestedok = False
+                                                                continue
+                                                            if v['v'].isalpha():
+                                                                if str(v['v']) != str(requestedvalues[k]):
+                                                                     allrequestedok = False
+                                                            else:
+                                                                if float(v['v']) != float(requestedvalues[k]):
+                                                                     allrequestedok = False
 
-                                                        if (float(timestamp) < float(inst.waitstringmintime)):
+                                                            if (float(timestamp) < float(inst.waitstringmintime)):
+                                                                allrequestedok = False
+                                                        except:
                                                             allrequestedok = False
                                                     else :
                                                         allrequestedok = False
@@ -258,17 +268,31 @@ async def listen(connection):
     websocket = None
     lock.release() 
 
+async def logout():
+    global websocket
+    global sessionid
+    wsok = 1
+    lock.acquire()
+    if not websocket:
+        wsok = 0
+    lock.release()
+    if not wsok:
+        return
+    cmd = CC2xlib.json_data.logout(sessionid)
+    await websocket.send(cmd)
 
 async def login(address,user,password):
     timeout = 5
     global websocket
     global sessionid
-    global _state,poweron
+    global _state,poweron, ctrlcreceived
     try:
         websocket = await asyncio.wait_for(websockets.connect('ws://'+address+':8080'), timeout)
         cmd = CC2xlib.json_data.login(user,password)
         await websocket.send(cmd)
         response = await websocket.recv()
+        if ctrlcreceived:
+            return
         adict = json.loads(response)
         lock.acquire()
         sessionid = adict["i"]
@@ -276,6 +300,7 @@ async def login(address,user,password):
             _state =(states.ON,"CONNECTED : "+sessionid)
         else :
             _state =(states.OFF,"CONNECTED : "+sessionid)
+        print(_state)
         for inst in instances:
             inst._state = _state
         lock.release()
@@ -354,11 +379,15 @@ def monitor(address,user,password):
         future1 = asyncio.ensure_future(heartbeat(websocket))
         future2 = asyncio.ensure_future(listen(websocket))
         loop.run_until_complete(asyncio.gather(future1,future2))
+        loop.run_until_complete(logout())
     except:
         pass
     lock.acquire()
     monitored.remove(address)
     lock.release()
+    loop.close()
+    print("monitor() exiting..")
+    return
 
 loop = None
 
@@ -391,8 +420,10 @@ def add_monitor(ipaddress,user,password):
    
 
 def queue_request(rol):
-    global sessionid, _state, loop, instances
+    global sessionid, _state, loop, instances, ctrlcreceived
     if len(rol) == 0: return
+    if  ctrlcreceived:
+        return
     sid =''
     tmpstate = (states.UNKNOWN)
     while sid == '':
@@ -406,7 +437,7 @@ def queue_request(rol):
             time.sleep(1)
     
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
-    timeout = 15
+    timeout = 30
     try :
         result = future.result(timeout)
     except asyncio.TimeoutError:
@@ -428,9 +459,25 @@ def queue_request(rol):
     else:
         return result
 
+def cleanup():
+    print("CC2x.cleanup()")
+    
+
+
+
+
+atexit.register(cleanup)
 
 
     
+def signal_handler(sig, frame):
+    global loop, ctrlcreceived
+
+    ctrlcreceived = 1
+    print('You pressed Ctrl+C! please wait up to 8s for exit')
+
     
+
+signal.signal(signal.SIGINT, signal_handler)
    
     

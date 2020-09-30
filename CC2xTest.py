@@ -60,9 +60,7 @@ class PowerSupply(CC2x.PowerSupply):
 
 a = PowerSupply()
 
-time.sleep(8)
-
-a.power(True)
+time.sleep(5)
 
 time.sleep(1)
 t = a.getTransitionNames()
