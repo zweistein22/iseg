@@ -201,16 +201,12 @@ class PowerSupply(base.MLZDevice):
         
 
     def On(self):
-        self.power(True)
+        CC2xlib.globals.power(True)
 
     def Off(self):
-        self.power(False)
+        CC2xlib.globals.power(False)
 
-    def power(self, value: bool) -> None:
-        rol = []
-        rol.append( CC2xlib.json_data.make_requestobject("setItem",CC2xlib.globals.always_monitored[0],"Control.power",str(int(value))))
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
-        CC2xlib.globals.queue_request(rol)
+    
 
     def getGroupNames(self)->List[str]:
         return CC2xlib.CC2xjsonhandling.getGroupNames(self.groups)

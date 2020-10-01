@@ -142,7 +142,6 @@ async def listen(connection):
                             for inst in instances:
                                 if lac in  inst.channels_handled:
                                     someinstancesubscribed = 1
-                                   
                             lock.release()
                             if (someinstancesubscribed or (lac in always_monitored)):
                                 command = c["d"]["i"]
@@ -403,6 +402,10 @@ def reset():
     _state = (states.UNKNOWN)
     
 
+def power(value: bool) -> None:
+        rol = []
+        rol.append( CC2xlib.json_data.make_requestobject("setItem",always_monitored[0],"Control.power",str(int(value))))
+        queue_request(rol)
 
 def monitor(address,user,password):
     global websocket, _state, loop, future1, future2, monitored, sessionid
@@ -436,12 +439,11 @@ def monitor(address,user,password):
     loop.run_until_complete(logout())
     lock.acquire()
     monitored.remove(address)
-    lock.release()
-    print("monitor() exiting..")
     #monitored = []
-   
     #itemUpdated = {}
     sessionid = ''
+    lock.release()
+    print("monitor() exiting..")
     loop = None
 
 loop = None
@@ -472,6 +474,10 @@ def add_monitor(ipaddress,user,password):
     
     t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
     t.start()
+    power(True)
+
+
+
    
 
 def queue_request(rol):

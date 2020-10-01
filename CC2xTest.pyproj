@@ -30,6 +30,7 @@
     <Compile Include="CC2xlib\ping.py" />
     <Compile Include="CC2xlib\__init__.py" />
     <Compile Include="CC2xTest.py" />
+    <Compile Include="isegCC2xChannel.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="CC2xlib\" />
