@@ -62,7 +62,10 @@ a = PowerSupply()
 
 time.sleep(5)
 
-time.sleep(1)
+a.delete()
+
+a = PowerSupply()
+
 t = a.getTransitionNames()
 #a.setVoltage(([29],['0_0_0']))
 

@@ -54,24 +54,24 @@ def StatusJson(channellist)->str:
 ctrlcreceived = 0
 
 async def heartbeat(connection):
-    global _state, sessionid, last_reqobj, ctrlcreceived
+    global _state, sessionid, last_reqobj
     while True:
         try:
             await asyncio.sleep(8)
-            if ctrlcreceived:
-                break
             rol = []
             lock.acquire()
             rol.append(json_data.make_requestobject("getUpdate", always_monitored[0],''))
             r = json_data.request(sessionid,rol)
             last_reqobj = r
             lock.release()
+            print("heartbeat!!!")
             await connection.send(r)
         except websockets.exceptions.ConnectionClosed:
             _state = (states.FAULT, 'Connection with server closed.')
             print(_state[1])
             break
         except Exception as inst:
+            print("heartbeat")
             print(type(inst))    # the exception instance
             print(inst.args)     # arguments stored in .args
             print(inst)  
@@ -80,11 +80,9 @@ async def heartbeat(connection):
 
 v_measure_received = 0    
 async def listen(connection):
-    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron,last_reqobj, ctrlcreceived
+    global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron,last_reqobj
     global v_measure_received
     while True:
-        if ctrlcreceived:
-            return
         try :
             response = await connection.recv()
             #print("\r\n"+response)
@@ -169,7 +167,7 @@ async def listen(connection):
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
                                 if lac == always_monitored[1]:
-                                    maxconnections = 2
+                                    maxconnections = 4
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):
                                         print("only "+str(maxconnections)+ " client(s) connection allowed.")
                                         await logout()
@@ -186,7 +184,7 @@ async def listen(connection):
                                 lock.release()
 
                                 if lac == always_monitored[0]:
-                                    if command == "Control.power":
+                                    if command == "Status.power":
                                         lock.acquire()
                                         if  value == '0':
                                             poweron = False
@@ -271,15 +269,20 @@ async def listen(connection):
 async def logout():
     global websocket
     global sessionid
-    wsok = 1
-    lock.acquire()
-    if not websocket:
-        wsok = 0
-    lock.release()
-    if not wsok:
-        return
-    cmd = CC2xlib.json_data.logout(sessionid)
-    await websocket.send(cmd)
+    
+    try:
+        wsok = 1
+        lock.acquire()
+        if not websocket:
+            wsok = 0
+        lock.release()
+        if not wsok:
+            return
+        cmd = CC2xlib.json_data.logout(sessionid)
+        await websocket.send(cmd)
+        
+    except:
+        pass
     if poweron:
         _state =(states.ON,"DISCONNECTED")
     else:
@@ -356,11 +359,53 @@ async def execute_request(requestobjlist):
     await websocket.send(cmd)
     return True
         
-       
+
 monitored = []
 
+future1 = None
+future2 = None
+
+def reset():
+    global future1,future2, loop, itemUpdated
+
+    future = asyncio.run_coroutine_threadsafe(logout(), loop)
+    timeout = 3
+    try :
+        result = future.result(timeout)
+        print("logout called -done")
+    except asyncio.TimeoutError:
+        lock.acquire()
+        _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
+        for inst in instances:
+            inst._state = _state
+        print(_state[1])
+        lock.release()
+        future.cancel()
+    except Exception as exc:
+        lock.acquire()
+        _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
+        for inst in instances:
+            inst._state = _state
+        print(_state[1])
+        lock.release()
+
+    if future1:
+        future1.cancel()
+    if future2:
+        future2.cancel()
+    
+    future1 = None
+    future2 = None
+    while loop:
+        time.sleep(1)
+
+    print("reset end")
+    _state = (states.UNKNOWN)
+    
+
+
 def monitor(address,user,password):
-    global websocket, _state, loop
+    global websocket, _state, loop, future1, future2, monitored, sessionid
     asyncio.set_event_loop(loop)
     #ping.ping(address)
     loop.run_until_complete(login(address,user,password))
@@ -384,16 +429,20 @@ def monitor(address,user,password):
         future1 = asyncio.ensure_future(heartbeat(websocket))
         future2 = asyncio.ensure_future(listen(websocket))
         loop.run_until_complete(asyncio.gather(future1,future2))
-        loop.run_until_complete(logout())
+        
+        
     except:
         pass
+    loop.run_until_complete(logout())
     lock.acquire()
     monitored.remove(address)
     lock.release()
-    loop.stop()
     print("monitor() exiting..")
+    #monitored = []
+   
+    #itemUpdated = {}
+    sessionid = ''
     loop = None
-    return
 
 loop = None
 
@@ -419,7 +468,7 @@ def add_monitor(ipaddress,user,password):
         return
     if lmon :
         raise Exception("Unsupported: multiple ip addresses")
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
     
     t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
     t.start()
@@ -445,7 +494,7 @@ def queue_request(rol):
             time.sleep(1)
     
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
-    timeout = 10
+    timeout = 15
     try :
         result = future.result(timeout)
     except asyncio.TimeoutError:
@@ -453,7 +502,7 @@ def queue_request(rol):
         _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
         for inst in instances:
             inst._state = _state
-        #print(_state[1])
+        print(_state[1])
         lock.release()
         future.cancel()
     except Exception as exc:
@@ -461,7 +510,7 @@ def queue_request(rol):
         _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
         for inst in instances:
             inst._state = _state
-        #print(_state[1])
+        print(_state[1])
         lock.release()
        
     else:
@@ -483,6 +532,7 @@ def signal_handler(sig, frame):
 
     ctrlcreceived = 1
     print('You pressed Ctrl+C! please wait up to 8s for exit')
+    reset()
 
     
 

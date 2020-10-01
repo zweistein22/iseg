@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
 <!-- iCS configuration -->
-<icsConfig lastChangedBy="CLI: iCStool.php" lastChanged="2020/09/30 16:58:47" iCSserial="5230306" iCSversion="">
+<icsConfig iCSserial="5230306" lastChanged="2020/10/01 07:45:47" lastChangedBy="CLI: iCStool.php" iCSversion="">
     <preferences>
         <sound>false</sound>
         <host>
@@ -17,18 +17,17 @@
         </camera>
     </preferences>
     <hardwareConfig>
-        
-    <device line="0" modelCatalog="" address="1000" model="CC24" firmwareRelease="04.23" type="crate" id="0-1000" firmwareName="ECH4XA" serial="5230306" title="Master">
+        <device line="0" firmwareName="ECH4XA" title="Master" firmwareRelease="04.23" modelCatalog="" serial="5230306" model="CC24" type="crate" address="1000" id="0-1000">
             <slot id="0">
-                <device adcSampleRateList="" type="module" cUnitLCR="µA" cResolution="4" cResolutionLCR="4" serial="7800361" vUnit="V" firmwareRelease="04.75" title="7800361" address="0" digitalFilter="64" adcSampleRate="50" firmwareName="E08C2" line="0" id="0-0" vResolution="4" cUnit="mA" model="EH082030x1040200203">
-                    <channel polarity="p" vnom="3000" id="0" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="1" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="2" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="3" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="4" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="5" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="6" inom="0.0001"/>
-                    <channel polarity="n" vnom="3000" id="7" inom="0.0001"/>
+                <device firmwareRelease="04.75" title="7800361" serial="7800361" digitalFilter="64" cUnitLCR="µA" firmwareName="E08C2" type="module" adcSampleRate="50" cUnit="mA" vResolution="4" cResolutionLCR="4" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-0" address="0" cResolution="4" vUnit="V">
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="3"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="4"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="5"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="6"/>
+                    <channel vnom="3000" polarity="n" inom="0.0001" id="7"/>
                     <eventHandling>
                         <endOfRamp>event</endOfRamp>
                         <constantVoltage>event</constantVoltage>
@@ -47,15 +46,15 @@
                 </device>
             </slot>
             <slot id="1">
-                <device adcSampleRateList="" type="module" cUnitLCR="µA" cResolution="4" cResolutionLCR="4" serial="7800362" vUnit="V" firmwareRelease="04.75" title="7800362" address="1" digitalFilter="64" adcSampleRate="50" firmwareName="E08C2" line="0" id="0-1" vResolution="4" cUnit="mA" model="EH082030x1040200203">
-                    <channel polarity="p" vnom="3000" id="0" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="1" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="2" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="3" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="4" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="5" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="6" inom="0.0001"/>
-                    <channel polarity="n" vnom="3000" id="7" inom="0.0001"/>
+                <device firmwareRelease="04.75" title="7800362" serial="7800362" digitalFilter="64" cUnitLCR="µA" firmwareName="E08C2" type="module" adcSampleRate="50" cUnit="mA" vResolution="4" cResolutionLCR="4" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-1" address="1" cResolution="4" vUnit="V">
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="3"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="4"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="5"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="6"/>
+                    <channel vnom="3000" polarity="n" inom="0.0001" id="7"/>
                     <eventHandling>
                         <endOfRamp>event</endOfRamp>
                         <constantVoltage>event</constantVoltage>
@@ -73,7 +72,8 @@
                     </eventHandling>
                 </device>
             </slot>
-        </device></hardwareConfig>
+        </device>
+    </hardwareConfig>
     <hardwareDetect version="2.0">
         <interfaces>
             <interface line="6" type="serial" name="ttymxc0"/>
@@ -83,17 +83,17 @@
             <interface line="1" type="can" name="can1"/>
             <interface line="0" type="can" name="can0"/>
         </interfaces>
-        <device line="0" modelCatalog="" address="1000" model="CC24" firmwareRelease="04.23" type="crate" id="0-1000" firmwareName="ECH4XA" serial="5230306" title="Master">
+        <device line="0" firmwareName="ECH4XA" title="Master" firmwareRelease="04.23" serial="5230306" modelCatalog="" type="crate" model="CC24" address="1000" id="0-1000">
             <slot id="0">
-                <device adcSampleRateList="" type="module" cUnitLCR="µA" cResolution="4" cResolutionLCR="4" serial="7800361" vUnit="V" firmwareRelease="04.75" title="7800361" address="0" digitalFilter="64" adcSampleRate="50" firmwareName="E08C2" line="0" id="0-0" vResolution="4" cUnit="mA" model="EH082030x1040200203">
-                    <channel polarity="p" vnom="3000" id="0" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="1" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="2" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="3" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="4" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="5" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="6" inom="0.0001"/>
-                    <channel polarity="n" vnom="3000" id="7" inom="0.0001"/>
+                <device firmwareRelease="04.75" title="7800361" serial="7800361" digitalFilter="64" cUnitLCR="µA" firmwareName="E08C2" type="module" adcSampleRate="50" cUnit="mA" vResolution="4" cResolutionLCR="4" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-0" address="0" cResolution="4" vUnit="V">
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="3"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="4"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="5"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="6"/>
+                    <channel vnom="3000" polarity="n" inom="0.0001" id="7"/>
                     <eventHandling>
                         <endOfRamp>event</endOfRamp>
                         <constantVoltage>event</constantVoltage>
@@ -112,15 +112,15 @@
                 </device>
             </slot>
             <slot id="1">
-                <device adcSampleRateList="" type="module" cUnitLCR="µA" cResolution="4" cResolutionLCR="4" serial="7800362" vUnit="V" firmwareRelease="04.75" title="7800362" address="1" digitalFilter="64" adcSampleRate="50" firmwareName="E08C2" line="0" id="0-1" vResolution="4" cUnit="mA" model="EH082030x1040200203">
-                    <channel polarity="p" vnom="3000" id="0" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="1" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="2" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="3" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="4" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="5" inom="0.0001"/>
-                    <channel polarity="p" vnom="3000" id="6" inom="0.0001"/>
-                    <channel polarity="n" vnom="3000" id="7" inom="0.0001"/>
+                <device firmwareRelease="04.75" title="7800362" serial="7800362" digitalFilter="64" cUnitLCR="µA" firmwareName="E08C2" type="module" adcSampleRate="50" cUnit="mA" vResolution="4" cResolutionLCR="4" model="EH082030x1040200203" adcSampleRateList="" line="0" id="0-1" address="1" cResolution="4" vUnit="V">
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="0"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="1"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="2"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="3"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="4"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="5"/>
+                    <channel vnom="3000" polarity="p" inom="0.0001" id="6"/>
+                    <channel vnom="3000" polarity="n" inom="0.0001" id="7"/>
                     <eventHandling>
                         <endOfRamp>event</endOfRamp>
                         <constantVoltage>event</constantVoltage>
@@ -211,17 +211,17 @@
     <!-- mode of ics server ("crate"|"icsmini|display")-->
     <iCSmode>crate</iCSmode>
     <channelFolders>
-        <channelFolder id="5cd111bc62728" title="sides">
+        <channelFolder title="sides" id="5cd111bc62728">
             <channel id="0_0_1"/>
             <channel id="0_0_2"/>
         </channelFolder>
-        <channelFolder id="5cd1125d29eb3" title="central-lines">
+        <channelFolder title="central-lines" id="5cd1125d29eb3">
             <channel id="0_1_4"/>
             <channel id="0_1_5"/>
         </channelFolder>
     </channelFolders>
     <channelProfiles>
-        <channelProfile id="5f326d2318c53" title="test">
+        <channelProfile title="test" id="5f326d2318c53">
             <channel id="0_0_0">
                 <item unit="" value="1" id="Control.on"/>
                 <item unit="V" value="0.00000" id="Control.voltageSet"/>
@@ -263,7 +263,7 @@
                 <item unit="µA" value="1.00000" id="Control.currentSet"/>
             </channel>
         </channelProfile>
-        <channelProfile id="5f329060c8666" title="test_1">
+        <channelProfile title="test_1" id="5f329060c8666">
             <channel id="0_0_0">
                 <item unit="" value="1" id="Control.on"/>
                 <item unit="V" value="0.00000" id="Control.voltageSet"/>

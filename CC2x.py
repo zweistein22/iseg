@@ -77,7 +77,7 @@ class PowerSupply(base.MLZDevice):
     }
  
     def init(self):
-        
+        print("init")
         self._state = (states.INIT,self.address)
         #checkoperatingstates(operatingstates)
         self.channels_handled = self.checkchannels()
@@ -95,11 +95,10 @@ class PowerSupply(base.MLZDevice):
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
         
         
-        #rol = []
-        #rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
-        #CC2xlib.globals.queue_request(rol)
+        rol = []
+        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Status.power"))
+        CC2xlib.globals.queue_request(rol)
         
-        self.On()
         self.setOperatingStylesOrCommand()
         
         
@@ -159,11 +158,16 @@ class PowerSupply(base.MLZDevice):
         self.delete()
 
     def delete(self):
+        print("CC2x.delete")
+        n_instances = 0
         CC2xlib.globals.lock.acquire()
         for i in CC2xlib.globals.instances:
             if i == self :
                 CC2xlib.globals.instances.remove(i)
+                n_instances = len(CC2xlib.globals.instances)
         CC2xlib.globals.lock.release()
+        if not n_instances:
+            CC2xlib.globals.reset()
 
 
     
@@ -198,7 +202,6 @@ class PowerSupply(base.MLZDevice):
 
     def On(self):
         self.power(True)
-        time.sleep(2)
 
     def Off(self):
         self.power(False)
@@ -206,7 +209,7 @@ class PowerSupply(base.MLZDevice):
     def power(self, value: bool) -> None:
         rol = []
         rol.append( CC2xlib.json_data.make_requestobject("setItem",CC2xlib.globals.always_monitored[0],"Control.power",str(int(value))))
-     #   rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
+        rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Control.power"))
         CC2xlib.globals.queue_request(rol)
 
     def getGroupNames(self)->List[str]:
