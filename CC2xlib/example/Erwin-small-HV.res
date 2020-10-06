@@ -1,10 +1,14 @@
 ["test/Erwin/HV-Powersupply"]
-type = "iseg.CC2x.PowerSupply"
+type = "iseg.CC2x.IntelligentPowerSupply"
 address = '172.25.25.56'
 user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
+unitTime = 'ms'
+unitCurrent ='µA'
+maxTripCurrent = 2
+maxVoltage = 2200
 
 
 transitions="""
@@ -43,27 +47,29 @@ transitions="""
 groups="""
 {
  "GROUP": [
-   {"Module0": { "CHANNEL": ["0_0"], "Control.kill": 0, "Control.voltageRampspeed" : 0.1 }},
-   {"Module1": { "CHANNEL": ["0_1"], "Control.kill": 0, "Control.voltageRampspeed" : 0.2 }},
+   {"Module0": { "CHANNEL": ["0_0"], "Control.kill": 0 , "Control.voltageRampspeed" : 0.18 }},
+   {"Module1": { "CHANNEL": ["0_1"], "Control.kill": 0 , "Control.voltageRampspeed" : 0.19 }},
+   {"Window": { "CHANNEL": ["0_0_7"], "OPERATINGSTYLE": "normal" }},
    {"Anodes": { "CHANNEL": ["0_0_0","0_0_1","0_0_2"]  ,"OPERATINGSTYLE": "normal" }},
-   {"CathodeStripes": { "CHANNEL": ["0_0_4","0_0_5"],  "OPERATINGSTYLE": "slow" }},
-   {"Window": { "CHANNEL": ["0_0_7"], "OPERATINGSTYLE": "normal" }}
+   {"CathodeStripes": { "CHANNEL": ["0_0_4","0_0_5"],  "OPERATINGSTYLE": "slow" }}
  ]
 }
 """
+
 operatingstyles="""
 {
   "OPERATNGSTYLE":
   [ 
     {"normal": {
-                "Control.currentSet" : 2,
-                "Setup.delayedTripTime" : 102 
+                "Control.currentSet" : 0.5,
+                "Setup.delayedTripTime" : 51,
+                "Setup.delayedTripAction": 2
      }},
 	 {"slow": {    
-                    "Control.currentSet" : 3,
-                    "Setup.delayedTripTime" : 111
+                    "Control.currentSet" : 1,
+                    "Setup.delayedTripTime" : 103,
+                    "Setup.delayedTripAction": 2
 	 }}
    ]
 }
 """
-

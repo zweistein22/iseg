@@ -1,4 +1,15 @@
+#  -*- coding: utf-8 -*-
+#***************************************************************************
+#* Copyright (C) 2020 by Andreas Langhoff *
+#* <andreas.langhoff@frm2.tum.de> *
+#* This program is free software; you can redistribute it and/or modify *
+#* it under the terms of the GNU General Public License v3 as published *
+#* by the Free Software Foundation; *
+# **************************************************************************
+
+
 from entangle import base
+from entangle.core import states
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
@@ -29,14 +40,23 @@ class PowerSupply(base.PowerSupply):
         CC2xlib.globals.lock.release()
         if not n_instances:
             CC2xlib.globals.reset()
-        
+
+    def On(self):
+        rol = []
+        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.On",1))
+        CC2xlib.globals.queue_request(rol)
+
+    def Off(self):
+        rol = []
+        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.On",0))
+        CC2xlib.globals.queue_request(rol)
 
     
-    def getItemValue(cmd:str)->float:
+    def getItemValue(self, cmd:str)->float:
         rv = 0
         CC2xlib.globals.lock.acquire()
-        if channel in CC2xlib.globals.itemUpdated:
-            ours = CC2xlib.globals.itemUpdated[channel]
+        if self.channel in CC2xlib.globals.itemUpdated:
+            ours = CC2xlib.globals.itemUpdated[self.channel]
             if cmd in ours:
                 vu = ours[cmd]
                 rv = float(vu['v'])
@@ -45,7 +65,7 @@ class PowerSupply(base.PowerSupply):
 
 
     def read_voltage(self):
-        return getItemValue("Status.voltageMeasure")
+        return self.getItemValue("Status.voltageMeasure")
 
     
     def write_voltage(self, value):
@@ -55,7 +75,7 @@ class PowerSupply(base.PowerSupply):
 
     
     def read_current(self):
-        return getItemValue("Status.currentMeasure")
+        return self.getItemValue("Status.currentMeasure")
 
     def write_current(self, value):
         rol = []

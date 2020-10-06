@@ -14,18 +14,53 @@ import time
 from typing import List
 
 from entangle import base
-from entangle.core.defs import boolean
-from entangle.core import states , Prop, Attr, Cmd, pair,listof
+from entangle.core import states ,int32, Prop, Attr, Cmd, pair,listof,uint32
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
 import entangle.device.iseg.CC2xlib.CC2xjsonhandling
 
 
+class CmdProcessor(object):
+    def read_availableLines(self):
+        tr_names =  self.getTransitionNames()
+        if not tr_names:
+            return 0
+        return len(tr_names)
+
+    def read_availableChars(self):
+        return -1
+
+    def Write(self, msg:str)->uint32:
+        self.lastcmd = msg
+        ourcmds = ['APPLY:']
+        for cmd in ourcmds:
+            if msg.startswith(cmd):
+                if cmd == ourcmds[0]:
+                    n_ = len(cmd)
+                    tr = self.lastcmd[n_:]
+                    self.applyTransition(tr)
+        return len(msg)
+
+    def ReadLine(self):
+        if not self.lastcmd:
+            return ''
+        tmp = self.lastcmd.rstrip()
+        cmd = 'TR'
+        index = tmp.find(cmd)
+        if index < 0:
+            return ''
+        itr = int(tmp[index+len(cmd):].strip())
+        tr_names =  self.getTransitionNames()
+        if not tr_names:
+            return ''
+        if len(tr_names) < itr:
+            return ''
+        return tr_names[itr]
 
 
 
-class PowerSupply(base.MLZDevice):
+class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     """Controls an Iseg CC2x high-voltage power supply via websocket."""
     
     commands = {
@@ -70,7 +105,11 @@ class PowerSupply(base.MLZDevice):
         'transitions': Prop(str, 'transitions.'),
         'groups': Prop(str, 'groups.'),
         'operatingstyles': Prop(str, 'operatingstyles.'),
-     }
+        'unitTime': Prop(str, 'unitTime.'),
+        'unitCurrent': Prop(str, 'unitCurrent.'),
+        'maxTripCurrent': Prop(int32, 'maxTripCurrent.'),
+        'maxVoltage': Prop(int32, 'maxVoltage.')
+    }
    
     attributes = {
          'jsonstatus':   Attr(str,'',writable = False,memorized = False),
@@ -97,11 +136,14 @@ class PowerSupply(base.MLZDevice):
         
         rol = []
         rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Status.power"))
-        CC2xlib.globals.queue_request(rol)
+        self.safequeue(rol)
         
         self.setOperatingStylesOrCommand()
         
-        
+    def safequeue(self, rol):
+        if self.checkmovelimitsandbugfix(rol):
+           self._state[1] = "LIMITS MOVED, "+self._state[1]
+        CC2xlib.globals.queue_request(rol)
         
 
     def setOperatingStylesOrCommand(self):
@@ -128,35 +170,26 @@ class PowerSupply(base.MLZDevice):
                                         for item,v in items.items():
                                             for channel in channels:
                                                 rol = []
-                                                if any(c.isalpha() for c in str(v)):
-                                                    strvalue = str(v)
-                                                else:
-                                                    strvalue = str(float(v))
-                                                rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,strvalue))
-                                                CC2xlib.globals.queue_request(rol)
-                                                rol = []
-                                                rol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item))
-                                                CC2xlib.globals.queue_request(rol)
+                                                #if any(c.isalpha() for c in str(v)):
+                                                #    strvalue = str(v)
+                                                #else:
+                                                #    strvalue = str(float(v))
+                                                rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
+                                                self.safequeue(rol)
+                                                
+                                              
                                                
                         elif cmds != 'CHANNEL':
                             for channel in channels:
                                 rol = []
                                 cmdvalue = val[cmds]
-                                rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,cmds,cmdvalue))
-                                CC2xlib.globals.queue_request(rol)
-                                rol = []
-                                rol.append(CC2xlib.json_data.make_requestobject("getItem",channel,cmds))
-                                CC2xlib.globals.queue_request(rol)
+                                rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,cmds,str(cmdvalue)))
+                                self.safequeue(rol)
+                                
+                                
                             
 
-                            
-        
-
-
-    def __delete__(self):
-        print("CC2x.__delete__()")
-        self.delete()
-
+  
     def delete(self):
         print("CC2x.delete")
         n_instances = 0
@@ -172,29 +205,29 @@ class PowerSupply(base.MLZDevice):
 
     
     def checkchannels(self):
-            rv = []
-            jobjgroups = json.loads(self.groups)
-            groups = jobjgroups['GROUP']
-            for group in groups:
-                for groupname in group:
-                    channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
-                    for ch in channels:
-                        if ch in rv:
-                            raise Exception("Duplicate channel '"+ch + "' in 'GROUP':"+group)
+        rv = []
+        jobjgroups = json.loads(self.groups)
+        groups = jobjgroups['GROUP']
+        for group in groups:
+            for groupname in group:
+                channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
+                for ch in channels:
+                    if ch in rv:
+                        raise Exception("Duplicate channel '"+ch + "' in 'GROUP':"+group)
 
-                        isusedbyother = False;
-                        CC2xlib.globals.lock.acquire()
-                        for i in CC2xlib.globals.instances:
-                            if i != self:
-                                if ch in i.channels_handled:
-                                    isusedbyother = True
+                    isusedbyother = False
+                    CC2xlib.globals.lock.acquire()
+                    for i in CC2xlib.globals.instances:
+                        if i != self:
+                            if ch in i.channels_handled:
+                                isusedbyother = True
 
-                        CC2xlib.globals.lock.release()
+                    CC2xlib.globals.lock.release()
 
-                        if isusedbyother:
-                            raise Exception("Channel '"+ch + "' used by another instance")
-                        rv.append(ch)
-            return rv
+                    if isusedbyother:
+                        raise Exception("Channel '"+ch + "' used by another instance")
+                    rv.append(ch)
+        return rv
 
     def getChannels(self,groupname):
         return CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
@@ -226,6 +259,8 @@ class PowerSupply(base.MLZDevice):
         CC2xlib.globals.lock.acquire()
         tmp = self.transitions[:]
         CC2xlib.globals.lock.release()
+        if not tmp:
+            return []
         return CC2xlib.CC2xjsonhandling.getTransitions(tmp)
         
 
@@ -245,8 +280,8 @@ class PowerSupply(base.MLZDevice):
             print("key="+ str(keys[j]) + ", value="+str(values[j]) )
             rol.append( CC2xlib.json_data.make_requestobject("getItem",keys[j],"Control.voltageSet",''))
             rol.append( CC2xlib.json_data.make_requestobject("setItem",keys[j],"Control.voltageSet",values[j]))
-     
-        CC2xlib.globals.queue_request(rol) 
+        self.safequeue(rol)
+        
         
 
     def read_jsonstatus(self):
@@ -256,19 +291,41 @@ class PowerSupply(base.MLZDevice):
     def get_jsonstatus_unit(self):
         return ''
     def state(self):
-       return self._state
+        return self._state
+
+    def checkmovelimitsandbugfix(self, rol):
+        cmds = ["Control.voltageSet","Control.currentSet","Setup.delayedTripTime"]
+        limits = [self.maxVoltage, self.maxTripCurrent,0]
+        units = ['',self.unitCurrent,self.unitTime]
+        limitsmoved = 0
+        for ro in rol:
+            if ro['c'] == "setItem":
+                item = ro['p']
+                if not 'i' in item:
+                    continue
+                ourcmd = item['i']
+                if ourcmd in cmds:
+                    i = cmds.index( ourcmd)
+                    v = item['v']
+                    if limits[i]:
+                        if v > limits[i]:
+                            item['v'] = limits[i]
+                            limitsmoved = 1
+                    if units[i]:
+                        item['u'] = units[i]
+
+        return limitsmoved
+
 
     def applyTransition(self,toapply):
         if (self.tw) and (self.tw.is_alive()):
             self.tw.join()
-     
-
         self.tw = threading.Thread(target=self.applytransitionworker, args=(toapply,))
         self.tw.start()
 
     def applytransitionworker(self,toapply):
         CC2xlib.globals.lock.acquire()
-        self_state = (states.BUSY,"START:"+toapply)
+        self._state = (states.BUSY,"START:"+toapply)
         print(self._state[1])
         CC2xlib.globals.lock.release()
         transitions = self.getTransitions()
@@ -310,7 +367,7 @@ class PowerSupply(base.MLZDevice):
                             waitforanswer = False
 
                         if waitforanswer:
-                              CC2xlib.globals.queue_request(getrol) 
+                            self.safequeue(getrol) 
 
                         if (str(item).startswith("Control.") or str(item).startswith("Setup.")):
                             
@@ -323,12 +380,21 @@ class PowerSupply(base.MLZDevice):
                                 for channel in channels:
                                     rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,values[j]))
                                     j = j + 1
+
+                                do_break = 0
+                                CC2xlib.globals.lock.acquire()
+                                if (self._state == states.FAULT or self._state == states.OFF):
+                                    do_break = 1
+                                CC2xlib.globals.lock.release()
+                                if do_break:
+                                    return
                                 CC2xlib.globals.lock.acquire()
                                 self.statusstr = "QUEUE_REQUEST:"+str(nextjob)
                                 self._state =(states.BUSY,self.statusstr)
                                 print(self.statusstr)
                                 CC2xlib.globals.lock.release()
-                                CC2xlib.globals.queue_request(rol) 
+                                self.safequeue(rol)
+                               
                         if not waitforanswer:
                             CC2xlib.globals.lock.acquire()
                             self.waitstring = ''
@@ -338,11 +404,12 @@ class PowerSupply(base.MLZDevice):
                         while rrlen:
                             time.sleep(2)  # a bit hacky!
                             CC2xlib.globals.lock.acquire()
+                            if self._state == states.FAULT:
+                                return
                             if not self.waitstring:
                                 rrlen = 0
                             CC2xlib.globals.lock.release()
                                
-                        pass
                 
                 CC2xlib.globals.lock.acquire()
                 self.statusstr = "FINISHED:"+toapply

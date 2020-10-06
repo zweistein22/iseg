@@ -8,7 +8,6 @@
 # **************************************************************************
 import atexit
 import signal
-import sys
 import asyncio
 import aiohttp
 import websockets
@@ -39,6 +38,7 @@ itemUpdated = {}
 _state = (states.UNKNOWN)
 poweron = False
 
+loop = None
 
 def StatusJson(channellist)->str:
     rv = ''
@@ -46,7 +46,7 @@ def StatusJson(channellist)->str:
     lock.acquire()
     for ch in channellist:
         if ch in itemUpdated:
-           tmp[ch] = itemUpdated[ch]
+            tmp[ch] = itemUpdated[ch]
     rv = json.dumps(tmp)
     lock.release()
     return rv
@@ -150,9 +150,17 @@ async def listen(connection):
                                         v_measure_received = v_measure_received + 1
                                         if not (v_measure_received % 5) :
                                             print(c["d"])
-                                            pass
                                     else:
                                         print(c["d"])
+                                if command in ["Status.currentLimitExceeded","Error.currentLimitExceeded", "Status.currentTrip", "Status.arc", "Event.arc", "Error.arc"]:
+                                    lock.acquire()
+                                    _state = (states.FAULT,lac + ":"+ command)
+                                    for inst in instances:
+                                        inst._state = _state
+                                        print(_state[1])
+                                    lock.release()
+
+
                                 if command in ["Status.inputError"]:
                                     print("\r\n")
                                     print("REQUEST\r\n")
@@ -172,7 +180,7 @@ async def listen(connection):
                                         await logout()
                                         await connection.close()
                                         break
-                                lenrr = 0
+                                
                                 ourdict = {}
                                 lock.acquire()
                                 if lac in itemUpdated:
@@ -227,10 +235,10 @@ async def listen(connection):
                                                                 continue
                                                             if v['v'].isalpha():
                                                                 if str(v['v']) != str(requestedvalues[k]):
-                                                                     allrequestedok = False
+                                                                    allrequestedok = False
                                                             else:
                                                                 if float(v['v']) != float(requestedvalues[k]):
-                                                                     allrequestedok = False
+                                                                    allrequestedok = False
 
                                                             if (float(timestamp) < float(inst.waitstringmintime)):
                                                                 allrequestedok = False
@@ -238,10 +246,10 @@ async def listen(connection):
                                                             allrequestedok = False
                                                     else :
                                                         allrequestedok = False
-                                                        pass
+                                                        
                                                 else :
                                                     allrequestedok = False
-                                                    pass
+                                                    
                                                 k = k + 1
                                         if allrequestedok:
                                             inst._state = (inst._state[0],"FINISHED:"+inst.waitstring)
@@ -365,29 +373,36 @@ future1 = None
 future2 = None
 
 def reset():
-    global future1,future2, loop, itemUpdated
+    global future1,future2, loop, itemUpdated, websocket
+    if websocket and loop:
+        future = asyncio.run_coroutine_threadsafe(logout(), loop)
+        timeout = 3
+        try :
+            result = future.result(timeout)
+            if result:
+                print(result)
+            print("logout call done")
+        except asyncio.TimeoutError:
+            lock.acquire()
+            _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
+            
+            for inst in instances:
+                inst._state = _state
+            print(_state[1])
+            lock.release()
+            future.cancel()
+        except Exception as exc:
+            lock.acquire()
+            _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
+            for inst in instances:
+                inst._state = _state
+            print(_state[1])
+            lock.release()
 
-    future = asyncio.run_coroutine_threadsafe(logout(), loop)
-    timeout = 3
-    try :
-        result = future.result(timeout)
-        print("logout called -done")
-    except asyncio.TimeoutError:
-        lock.acquire()
-        _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
-        for inst in instances:
-            inst._state = _state
-        print(_state[1])
-        lock.release()
-        future.cancel()
-    except Exception as exc:
-        lock.acquire()
-        _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
-        for inst in instances:
-            inst._state = _state
-        print(_state[1])
-        lock.release()
-
+    if not (future1 and future2):
+        if loop:
+            loop.close()
+        loop = None
     if future1:
         future1.cancel()
     if future2:
@@ -403,9 +418,9 @@ def reset():
     
 
 def power(value: bool) -> None:
-        rol = []
-        rol.append( CC2xlib.json_data.make_requestobject("setItem",always_monitored[0],"Control.power",str(int(value))))
-        queue_request(rol)
+    rol = []
+    rol.append( CC2xlib.json_data.make_requestobject("setItem",always_monitored[0],"Control.power",str(int(value))))
+    queue_request(rol)
 
 def monitor(address,user,password):
     global websocket, _state, loop, future1, future2, monitored, sessionid
@@ -446,11 +461,11 @@ def monitor(address,user,password):
     print("monitor() exiting..")
     loop = None
 
-loop = None
+
 
 def add_monitor(ipaddress,user,password):
     global loop,instances
-    alreadyrunning = False;
+    alreadyrunning = False
     lmon = 0
     lock.acquire()
     lmon = len(monitored)

@@ -1,8 +1,8 @@
 import sys
+import logging
 import time
 from os import path
 import toml
-import json
 # Add import path for inplace usage
 sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '../../..')))
 import CC2xlib.globals
@@ -15,10 +15,14 @@ import CC2x
 from entangle.core import states ,Prop
 
 
-class PowerSupply(CC2x.PowerSupply):
+
+
+class PowerSupply(CC2x.IntelligentPowerSupply):
 
     _props = {}
+    #log = logging.getLogger()
     def __init__(self,logger=None):
+        #super(CC2x.IntelligentPowerSupply, self).__init__(log)
         self.state = states.INIT
         with open('CC2xlib/example/Erwin-small-HV.res') as fd:
             data = toml.load(fd)
@@ -26,13 +30,19 @@ class PowerSupply(CC2x.PowerSupply):
             self.address = data[tango_name]['address']
             self.user = data[tango_name]['user']
             self.password = data[tango_name]['password']
-            self.transitions = data[tango_name]['transitions']
-            self.groups = data[tango_name]['groups']
-            self.operatingstyles = data[tango_name]['operatingstyles']
+            if 'transitions' in data[tango_name]:
+                self.transitions = data[tango_name]['transitions']
+            if 'groups' in data[tango_name]:
+                self.groups = data[tango_name]['groups']
+            if 'operatingstyles' in data[tango_name]:
+                self.operatingstyles = data[tango_name]['operatingstyles']
+            self.unitTime =  data[tango_name]['unitTime']
+            self.unitCurrent = data[tango_name]['unitCurrent']
+            self.maxTripCurrent = data[tango_name]['maxTripCurrent']
+            self.maxVoltage = data[tango_name]['maxVoltage']
         self.init()
-
-    def __delete__(self):
-        self.delete()
+       
+   
         
              
     def setGroupItemValues(self,groupname,cmditem,channelvalues):
@@ -60,11 +70,25 @@ class PowerSupply(CC2x.PowerSupply):
 
 a = PowerSupply()
 
-time.sleep(5)
+n_items = a.read_availableLines()
 
-a.delete()
+delays = []
+cmds =[]
 
-a = PowerSupply()
+for i in range(n_items):
+    delays.append(0)
+    cmd = "TR" + str(i)
+    cmds.append(cmd)
+
+transitionnames = a.MultiCommunicate((delays,cmds))
+cmd = 'APPLY:' + transitionnames[0]
+a.Write(cmd)
+time.sleep(25)
+
+#a.delete()
+
+#a = PowerSupply()
+
 
 t = a.getTransitionNames()
 #a.setVoltage(([29],['0_0_0']))
