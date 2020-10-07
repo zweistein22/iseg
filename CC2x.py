@@ -137,12 +137,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         rol = []
         rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Status.power"))
         self.safequeue(rol)
-        
         self.setOperatingStylesOrCommand()
         
     def safequeue(self, rol):
         if self.checkmovelimitsandbugfix(rol):
-           self._state[1] = "LIMITS MOVED, "+self._state[1]
+           self._state  =(self._state[0], "LIMITS MOVED, "+self._state[1])
         CC2xlib.globals.queue_request(rol)
         
 
@@ -158,12 +157,14 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         jgroups = json.loads(self.groups)
         for group in jgroups['GROUP']:
             for key,val in group.items():
+            #must keep val , otherwise different assignment to key, pylint will report a warning -> dead wrong
                 if key == groupname:
                     for cmds in val:
                         if cmds == "OPERATINGSTYLE":
                             operatingstyle = val["OPERATINGSTYLE"]
                             jstyles = json.loads(self.operatingstyles)
-                            for style in jstyles['OPERATNGSTYLE']:
+                            availablestyes = jstyles['OPERATNGSTYLE']
+                            for style in availablestyes:
                                 for k in style:
                                     if k == operatingstyle:
                                         items = style[k]
@@ -176,17 +177,17 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                                 #    strvalue = str(float(v))
                                                 rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
                                                 self.safequeue(rol)
-                                                
-                                              
-                                               
+                            
                         elif cmds != 'CHANNEL':
                             for channel in channels:
                                 rol = []
                                 cmdvalue = val[cmds]
                                 rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,cmds,str(cmdvalue)))
                                 self.safequeue(rol)
+
+                       
                                 
-                                
+               
                             
 
   
@@ -297,23 +298,29 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         cmds = ["Control.voltageSet","Control.currentSet","Setup.delayedTripTime"]
         limits = [self.maxVoltage, self.maxTripCurrent,0]
         units = ['',self.unitCurrent,self.unitTime]
+        #units is a bug fix for iges ics
         limitsmoved = 0
-        for ro in rol:
-            if ro['c'] == "setItem":
-                item = ro['p']
-                if not 'i' in item:
-                    continue
-                ourcmd = item['i']
-                if ourcmd in cmds:
-                    i = cmds.index( ourcmd)
-                    v = item['v']
-                    if limits[i]:
-                        if v > limits[i]:
-                            item['v'] = limits[i]
-                            limitsmoved = 1
-                    if units[i]:
-                        item['u'] = units[i]
-
+        try:
+            for ro in rol:
+                if ro['c'] == "setItem":
+                    item = ro['p']
+                    if not 'i' in item:
+                        continue
+                    ourcmd = item['i']
+                    if ourcmd in cmds:
+                        i = cmds.index( ourcmd)
+                        v = item['v']
+                        sign = 1
+                        if v < 0:
+                            sign = -1
+                        if limits[i]:
+                            if abs(v) > limits[i]:
+                                item['v'] = sign * limits[i]
+                                limitsmoved = 1
+                        if units[i]:
+                            item['u'] = units[i]
+        except :
+            pass                       
         return limitsmoved
 
 

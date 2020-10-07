@@ -152,13 +152,7 @@ async def listen(connection):
                                             print(c["d"])
                                     else:
                                         print(c["d"])
-                                if command in ["Status.currentLimitExceeded","Error.currentLimitExceeded", "Status.currentTrip", "Status.arc", "Event.arc", "Error.arc"]:
-                                    lock.acquire()
-                                    _state = (states.FAULT,lac + ":"+ command)
-                                    for inst in instances:
-                                        inst._state = _state
-                                        print(_state[1])
-                                    lock.release()
+                                
 
 
                                 if command in ["Status.inputError"]:
@@ -173,6 +167,19 @@ async def listen(connection):
                                 value = c["d"]["v"]
                                 unit =  c["d"]["u"]
                                 vu = {"v":value, "u": unit}
+                                if ctrlcreceived:
+                                    await logout()
+                                    await connection.close()
+                                    break
+
+                                if (value and command in ["Error.currentLimitExceeded", "Status.currentTrip", "Status.arc", "Event.arc", "Error.arc"]):
+                                    lock.acquire()
+                                    _state = (states.FAULT,lac + ":"+ command)
+                                    for inst in instances:
+                                        inst._state = _state
+                                        print(_state[1])
+                                    lock.release()
+
                                 if lac == always_monitored[1]:
                                     maxconnections = 4
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):

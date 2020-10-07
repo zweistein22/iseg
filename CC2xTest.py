@@ -83,7 +83,7 @@ for i in range(n_items):
 transitionnames = a.MultiCommunicate((delays,cmds))
 cmd = 'APPLY:' + transitionnames[0]
 a.Write(cmd)
-time.sleep(25)
+time.sleep(5)
 
 #a.delete()
 
@@ -93,7 +93,7 @@ time.sleep(25)
 t = a.getTransitionNames()
 #a.setVoltage(([29],['0_0_0']))
 
-a.applyTransition("Off->On")
+a.applyTransition("goOn")
 for i in range(10):
     time.sleep(1)
 
@@ -104,7 +104,8 @@ if voltage004:
 for i in range(15):
     time.sleep(1)
 
-a.applyTransition("On->Off")
+a.applyTransition("goOff")
+
 
 
 
