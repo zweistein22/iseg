@@ -9,14 +9,24 @@
 
 
 from entangle import base
-from entangle.core import states
+from entangle.core import states , Prop, Attr
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
 import entangle.device.iseg.CC2xlib.CC2xjsonhandling
 
 class PowerSupply(base.PowerSupply):
-
+    properties = {
+        'address': Prop(str, 'ip address of device.'),
+        'user': Prop(str, 'user.'),
+        'password': Prop(str, 'pw.'),
+        'channel': Prop(str, 'channel.'),
+        'operatingstyles': Prop(str, 'operatingstyles.',default=''),
+    }
+   
+    attributes = {
+         'jsonstatus':   Attr(str,'',writable = False,memorized = False),
+    }
 
     def init(self):
         self._state = (states.INIT,self.address)
@@ -55,6 +65,7 @@ class PowerSupply(base.PowerSupply):
     def getItemValue(self, cmd:str)->float:
         rv = 0
         CC2xlib.globals.lock.acquire()
+     
         if self.channel in CC2xlib.globals.itemUpdated:
             ours = CC2xlib.globals.itemUpdated[self.channel]
             if cmd in ours:
@@ -82,3 +93,12 @@ class PowerSupply(base.PowerSupply):
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.currentSet",str(value)))
         CC2xlib.globals.queue_request(rol)
 
+
+    def read_jsonstatus(self):
+        ours = CC2xlib.globals.StatusJson(self.channels_handled)
+        return ours
+
+    def get_jsonstatus_unit(self):
+        return ''
+    def state(self):
+        return self._state

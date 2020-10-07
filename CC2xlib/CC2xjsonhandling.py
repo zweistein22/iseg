@@ -55,13 +55,17 @@ def getChannels(groups:str,groupname:str)->List[str]:
 
 def getOperatingStyleNames(operatingstyles:str)->List[str]:
     rv = []
+    if not operatingstyles:
+        return rv
     jobjoperatingstyles = json.loads(operatingstyles)
+    if not jobjoperatingstyles:
+        return rv
     if 'OPERATNGSTYLE' in jobjoperatingstyles:
         groups = jobjoperatingstyles['OPERATNGSTYLE']
         for group in groups:
             for key,val in group.items():
              #must keep val , otherwise different assignment to key, pylint will report a warning -> dead wrong
                 rv.append(key)
-        return rv
+    return rv
 
 

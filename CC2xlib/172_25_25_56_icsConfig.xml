@@ -1,6 +1,6 @@
-<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <!-- iCS configuration -->
-<icsConfig iCSserial="5230306" lastChanged="2020/10/02 11:55:58" iCSversion="" lastChangedBy="CLI: iCStool.php">
+<icsConfig iCSserial="5230306" lastChanged="2020/10/02 16:44:49" iCSversion="" lastChangedBy="CLI: iCStool.php">
     <preferences>
         <sound>false</sound>
         <host>
@@ -17,7 +17,73 @@
         </camera>
     </preferences>
     <hardwareConfig>
-        <device modelCatalog="" type="crate" title="Master" id="0-1000" firmwareRelease="04.23" address="1000" firmwareName="ECH4XA" line="0" model="CC24" serial="5230306">
+        
+    <device modelCatalog="" type="crate" id="0-1000" address="1000" title="Master" firmwareRelease="04.23" firmwareName="ECH4XA" line="0" model="CC24" serial="5230306">
+            <slot id="0">
+                <device model="EH082030x1040200203" serial="7800361" address="0" cUnitLCR="µA" vResolution="4" digitalFilter="64" adcSampleRateList="" vUnit="V" type="module" adcSampleRate="50" title="7800361" firmwareRelease="04.75" cResolution="4" cResolutionLCR="4" cUnit="mA" line="0" firmwareName="E08C2" id="0-0">
+                    <channel inom="0.0001" id="0" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="1" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="2" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="3" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="4" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="5" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="6" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="7" vnom="3000" polarity="n"/>
+                    <eventHandling>
+                        <endOfRamp>event</endOfRamp>
+                        <constantVoltage>event</constantVoltage>
+                        <constantCurrent>event</constantCurrent>
+                        <inputError>event</inputError>
+                        <supplyNotGood>event</supplyNotGood>
+                        <temperatureNotGood>event</temperatureNotGood>
+                        <emergency>event</emergency>
+                        <voltageBound>event</voltageBound>
+                        <currentBound>event</currentBound>
+                        <externalInhibit>event</externalInhibit>
+                        <currentTrip>event</currentTrip>
+                        <voltageLimitExceeded>event</voltageLimitExceeded>
+                        <currentLimitExceeded>event</currentLimitExceeded>
+                    </eventHandling>
+                </device>
+            </slot>
+            <slot id="1">
+                <device model="EH082030x1040200203" serial="7800362" address="1" cUnitLCR="µA" vResolution="4" digitalFilter="64" adcSampleRateList="" vUnit="V" type="module" adcSampleRate="50" title="7800362" firmwareRelease="04.75" cResolution="4" cResolutionLCR="4" cUnit="mA" line="0" firmwareName="E08C2" id="0-1">
+                    <channel inom="0.0001" id="0" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="1" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="2" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="3" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="4" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="5" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="6" vnom="3000" polarity="p"/>
+                    <channel inom="0.0001" id="7" vnom="3000" polarity="n"/>
+                    <eventHandling>
+                        <endOfRamp>event</endOfRamp>
+                        <constantVoltage>event</constantVoltage>
+                        <constantCurrent>event</constantCurrent>
+                        <inputError>event</inputError>
+                        <supplyNotGood>event</supplyNotGood>
+                        <temperatureNotGood>event</temperatureNotGood>
+                        <emergency>event</emergency>
+                        <voltageBound>event</voltageBound>
+                        <currentBound>event</currentBound>
+                        <externalInhibit>event</externalInhibit>
+                        <currentTrip>event</currentTrip>
+                        <voltageLimitExceeded>event</voltageLimitExceeded>
+                        <currentLimitExceeded>event</currentLimitExceeded>
+                    </eventHandling>
+                </device>
+            </slot>
+        </device></hardwareConfig>
+    <hardwareDetect version="2.0">
+        <interfaces>
+            <interface type="serial" name="ttymxc0" line="6"/>
+            <interface type="serial" name="ttymxc1" line="6"/>
+            <interface type="serial" name="ttymxc3" line="6"/>
+            <interface type="serial" name="ttymxc4" line="6"/>
+            <interface type="can" name="can1" line="1"/>
+            <interface type="can" name="can0" line="0"/>
+        </interfaces>
+        <device modelCatalog="" type="crate" id="0-1000" address="1000" title="Master" firmwareRelease="04.23" firmwareName="ECH4XA" line="0" model="CC24" serial="5230306">
             <slot id="0">
                 <device model="EH082030x1040200203" serial="7800361" address="0" cUnitLCR="µA" vResolution="4" digitalFilter="64" adcSampleRateList="" vUnit="V" type="module" adcSampleRate="50" title="7800361" firmwareRelease="04.75" cResolution="4" cResolutionLCR="4" cUnit="mA" line="0" firmwareName="E08C2" id="0-0">
                     <channel inom="0.0001" id="0" vnom="3000" polarity="p"/>
@@ -73,17 +139,6 @@
                 </device>
             </slot>
         </device>
-    </hardwareConfig>
-    <hardwareDetect version="2.0">
-        <interfaces>
-            <interface type="serial" name="ttymxc0" line="6"/>
-            <interface type="serial" name="ttymxc1" line="6"/>
-            <interface type="serial" name="ttymxc3" line="6"/>
-            <interface type="serial" name="ttymxc4" line="6"/>
-            <interface type="can" name="can1" line="1"/>
-            <interface type="can" name="can0" line="0"/>
-        </interfaces>
-        <device modelCatalog="" type="crate" id="0-1000" address="1000" title="Master" firmwareRelease="04.23" firmwareName="ECH4XA" line="0" model="CC24" serial="5230306"/>
     </hardwareDetect>
     <ethernet>
         <dhcp>false</dhcp>

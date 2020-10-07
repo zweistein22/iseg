@@ -181,7 +181,9 @@ async def listen(connection):
                                     lock.release()
 
                                 if lac == always_monitored[1]:
-                                    maxconnections = 4
+                                    maxconnections = 2
+                                    #NOT SURE : BUG in iseg module, will report disconnected clients only with a delay
+                                    #doing several Reset() within short time the number of connected clients will temporarily increase
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):
                                         print("only "+str(maxconnections)+ " client(s) connection allowed.")
                                         await logout()
@@ -258,6 +260,13 @@ async def listen(connection):
                                                     allrequestedok = False
                                                     
                                                 k = k + 1
+
+                                        if not poweron:
+                                            inst._state = (inst._state[0],"CANCELLED:"+inst.waitstring)
+                                            print(inst._state[1])
+                                            inst.waitstring = ''
+                                            inst.waitstringmintime = ''
+
                                         if allrequestedok:
                                             inst._state = (inst._state[0],"FINISHED:"+inst.waitstring)
                                             print(inst._state[1])
@@ -294,7 +303,8 @@ async def logout():
             return
         cmd = CC2xlib.json_data.logout(sessionid)
         await websocket.send(cmd)
-        
+        await websocket.close()
+        websocket = None
     except:
         pass
     if poweron:
@@ -380,7 +390,9 @@ future1 = None
 future2 = None
 
 def reset():
-    global future1,future2, loop, itemUpdated, websocket
+    global future1,future2, loop, itemUpdated, websocket, _state
+    if _state == states.UNKNOWN:
+        return
     if websocket and loop:
         future = asyncio.run_coroutine_threadsafe(logout(), loop)
         timeout = 3
@@ -391,7 +403,7 @@ def reset():
             print("logout call done")
         except asyncio.TimeoutError:
             lock.acquire()
-            _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
+            _state = (states.FAULT,'The logout() coroutine call too long, cancelling the task...')
             
             for inst in instances:
                 inst._state = _state
@@ -411,15 +423,15 @@ def reset():
             loop.close()
         loop = None
     if future1:
-        future1.cancel()
+        loop.call_soon_threadsafe(future1.cancel)
+        
     if future2:
-        future2.cancel()
+        loop.call_soon_threadsafe(future2.cancel)
     
-    future1 = None
-    future2 = None
+    
     while loop:
         time.sleep(1)
-
+    websocket = None
     print("reset end")
     _state = (states.UNKNOWN)
     
@@ -465,8 +477,11 @@ def monitor(address,user,password):
     #itemUpdated = {}
     sessionid = ''
     lock.release()
-    print("monitor() exiting..")
+    future1 = None
+    future2 = None
     loop = None
+    print("monitor() exiting..")
+   
 
 
 

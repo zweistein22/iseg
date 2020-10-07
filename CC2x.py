@@ -22,6 +22,7 @@ import entangle.device.iseg.CC2xlib.CC2xjsonhandling
 
 
 class CmdProcessor(object):
+    lastcmd = ''
     def read_availableLines(self):
         tr_names =  self.getTransitionNames()
         if not tr_names:
@@ -102,9 +103,9 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         'address': Prop(str, 'ip address of device.'),
         'user': Prop(str, 'user.'),
         'password': Prop(str, 'pw.'),
-        'transitions': Prop(str, 'transitions.'),
+        'transitions': Prop(str, 'transitions.',default=''),
         'groups': Prop(str, 'groups.'),
-        'operatingstyles': Prop(str, 'operatingstyles.'),
+        'operatingstyles': Prop(str, 'operatingstyles.',default=''),
         'unitTime': Prop(str, 'unitTime.'),
         'unitCurrent': Prop(str, 'unitCurrent.'),
         'maxTripCurrent': Prop(int32, 'maxTripCurrent.'),
@@ -202,6 +203,9 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         CC2xlib.globals.lock.release()
         if not n_instances:
             CC2xlib.globals.reset()
+        
+
+    
 
 
     
@@ -239,7 +243,8 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
     def Off(self):
         CC2xlib.globals.power(False)
-
+        if self.tw:
+            self.tw.join()
     
 
     def getGroupNames(self)->List[str]:
@@ -328,6 +333,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         if (self.tw) and (self.tw.is_alive()):
             self.tw.join()
         self.tw = threading.Thread(target=self.applytransitionworker, args=(toapply,))
+        self.tw.daemon = True
         self.tw.start()
 
     def applytransitionworker(self,toapply):
@@ -390,11 +396,14 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
                                 do_break = 0
                                 CC2xlib.globals.lock.acquire()
-                                if (self._state == states.FAULT or self._state == states.OFF):
+                                if not CC2xlib.globals.poweron:
                                     do_break = 1
+                                if self._state == states.FAULT:
+                                    do_break = 1
+
                                 CC2xlib.globals.lock.release()
                                 if do_break:
-                                    return
+                                    break
                                 CC2xlib.globals.lock.acquire()
                                 self.statusstr = "QUEUE_REQUEST:"+str(nextjob)
                                 self._state =(states.BUSY,self.statusstr)
@@ -409,10 +418,13 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
                         rrlen = 1
                         while rrlen:
+                            if not CC2xlib.globals.poweron:
+                                return
                             time.sleep(2)  # a bit hacky!
                             CC2xlib.globals.lock.acquire()
-                            if self._state == states.FAULT:
+                            if self._state == states.FAULT :
                                 return
+                           
                             if not self.waitstring:
                                 rrlen = 0
                             CC2xlib.globals.lock.release()

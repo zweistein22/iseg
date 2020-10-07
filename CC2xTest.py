@@ -85,26 +85,35 @@ cmd = 'APPLY:' + transitionnames[0]
 a.Write(cmd)
 time.sleep(5)
 
-#a.delete()
+a.Off()
 
-#a = PowerSupply()
+time.sleep(30)
 
+for i in range(0,7):
+    print("Cycle"+str(i))
+    time.sleep(1)
+    a.delete()
+    a = PowerSupply()
 
-t = a.getTransitionNames()
+print("END CYCLES")
+
+sys.exit()
+
+#t = a.getTransitionNames()
 #a.setVoltage(([29],['0_0_0']))
 
-a.applyTransition("goOn")
-for i in range(10):
-    time.sleep(1)
+#a.applyTransition("goOn")
+#for i in range(10):
+#    time.sleep(1)
 
-statusjsonstr = a.read_jsonstatus()
-voltage004 = CC2xlib.CC2xjsonhandling.getStatusValue("0_0_4","Status.voltageMeasure",statusjsonstr)
-if voltage004:
-    print("\r\n"+"0_0_4"+ " : "+ "Status.voltageMeasure" +"="+ str(voltage004)+"\r\n")
-for i in range(15):
-    time.sleep(1)
+#statusjsonstr = a.read_jsonstatus()
+#voltage004 = CC2xlib.CC2xjsonhandling.getStatusValue("0_0_4","Status.voltageMeasure",statusjsonstr)
+#if voltage004:
+#    print("\r\n"+"0_0_4"+ " : "+ "Status.voltageMeasure" +"="+ str(voltage004)+"\r\n")
+#for i in range(15):
+#   time.sleep(1)
 
-a.applyTransition("goOff")
+#a.applyTransition("goOff")
 
 
 
