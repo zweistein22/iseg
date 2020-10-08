@@ -38,8 +38,7 @@
     <Folder Include="CC2xlib\__pycache__\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="CC2xlib\172_25_25_56_getItemsInfo.xml" />
-    <Content Include="CC2xlib\172_25_25_56_icsConfig.xml" />
+    <Content Include=".gitignore" />
     <Content Include="CC2xlib\example\Erwin-small-HV.res" />
     <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\json_data.cpython-37.pyc" />
