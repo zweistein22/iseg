@@ -62,12 +62,12 @@ operatingstyles="""
   [ 
     {"normal": {
                 "Control.currentSet" : 0.5,
-                "Setup.delayedTripTime" : 51,
+                "Setup.delayedTripTime" : 150,
                 "Setup.delayedTripAction": 2
      }},
 	 {"slow": {    
-                    "Control.currentSet" : 1,
-                    "Setup.delayedTripTime" : 103,
+                    "Control.currentSet" : 2,
+                    "Setup.delayedTripTime" : 500,
                     "Setup.delayedTripAction": 2
 	 }}
    ]

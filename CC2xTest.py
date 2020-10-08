@@ -12,7 +12,7 @@ import CC2x
 
 
 
-from entangle.core import states ,Prop
+from entangle.core import states 
 
 
 
@@ -87,7 +87,7 @@ time.sleep(5)
 
 a.Off()
 
-time.sleep(30)
+time.sleep(10)
 
 for i in range(0,7):
     print("Cycle"+str(i))

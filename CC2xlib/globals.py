@@ -403,13 +403,16 @@ def reset():
             print("logout call done")
         except asyncio.TimeoutError:
             lock.acquire()
-            _state = (states.FAULT,'The logout() coroutine call too long, cancelling the task...')
+            _state = (states.FAULT,'The logout() coroutine call too long, cancelling...')
             
             for inst in instances:
                 inst._state = _state
             print(_state[1])
             lock.release()
-            future.cancel()
+            if loop:
+                loop.call_soon_threadsafe(future.cancel)
+            else:
+                future.cancel()
         except Exception as exc:
             lock.acquire()
             _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')

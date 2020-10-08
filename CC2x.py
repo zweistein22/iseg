@@ -142,7 +142,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         
     def safequeue(self, rol):
         if self.checkmovelimitsandbugfix(rol):
-           self._state  =(self._state[0], "LIMITS MOVED, "+self._state[1])
+            self._state  =(self._state[0], "LIMITS MOVED, "+self._state[1])
         CC2xlib.globals.queue_request(rol)
         
 
@@ -297,7 +297,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     def get_jsonstatus_unit(self):
         return ''
     def state(self):
-        return self._state
+        currstate = (states.UNKOWN,'unknown')
+        CC2xlib.globals.lock.acquire()
+        currstate = self._state
+        CC2xlib.globals.lock.release()
+        return currstate
 
     def checkmovelimitsandbugfix(self, rol):
         cmds = ["Control.voltageSet","Control.currentSet","Setup.delayedTripTime"]
@@ -305,27 +309,26 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         units = ['',self.unitCurrent,self.unitTime]
         #units is a bug fix for iges ics
         limitsmoved = 0
-        try:
-            for ro in rol:
-                if ro['c'] == "setItem":
-                    item = ro['p']
-                    if not 'i' in item:
-                        continue
-                    ourcmd = item['i']
-                    if ourcmd in cmds:
-                        i = cmds.index( ourcmd)
-                        v = item['v']
-                        sign = 1
-                        if v < 0:
-                            sign = -1
-                        if limits[i]:
-                            if abs(v) > limits[i]:
-                                item['v'] = sign * limits[i]
-                                limitsmoved = 1
-                        if units[i]:
-                            item['u'] = units[i]
-        except :
-            pass                       
+        
+        for ro in rol:
+            if ro['c'] == "setItem":
+                item = ro['p']
+                if not 'i' in item:
+                    continue
+                ourcmd = item['i']
+                if ourcmd in cmds:
+                    i = cmds.index( ourcmd)
+                    v = item['v']
+                    sign = 1
+                    if v < 0:
+                        sign = -1
+                    if limits[i]:
+                        if abs(v) > limits[i]:
+                            item['v'] = sign * limits[i]
+                            limitsmoved = 1
+                    if units[i]:
+                        item['u'] = units[i]
+                           
         return limitsmoved
 
 
@@ -418,17 +421,23 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
                         rrlen = 1
                         while rrlen:
+                            doreturn = 0
+                            CC2xlib.globals.lock.acquire()
                             if not CC2xlib.globals.poweron:
+                                doreturn = 1
+                            CC2xlib.globals.lock.release()
+                            if doreturn:
                                 return
                             time.sleep(2)  # a bit hacky!
+
                             CC2xlib.globals.lock.acquire()
                             if self._state == states.FAULT :
-                                return
-                           
+                                doreturn = 1
                             if not self.waitstring:
                                 rrlen = 0
                             CC2xlib.globals.lock.release()
-                               
+                            if doreturn:
+                                return  
                 
                 CC2xlib.globals.lock.acquire()
                 self.statusstr = "FINISHED:"+toapply
