@@ -6,6 +6,8 @@
 # User-specific files
 *getItemsInfo.xml
 *icsConfig.xml
+*.pyproj
+*.sln
 *.rsuser
 *.suo
 *.user
