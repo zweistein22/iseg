@@ -141,8 +141,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         self.setOperatingStylesOrCommand()
         
     def safequeue(self, rol):
-        if self.checkmovelimitsandbugfix(rol):
-            self._state  =(self._state[0], "LIMITS MOVED, "+self._state[1])
+        rv, msg =  self.checkmovelimitsandbugfix(rol)
+        if rv:
+            CC2xlib.globals.lock.acquire()
+            self._state  =(self._state[0], msg +self._state[1])
+            CC2xlib.globals.lock.release()
         CC2xlib.globals.queue_request(rol)
         
 
@@ -297,7 +300,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     def get_jsonstatus_unit(self):
         return ''
     def state(self):
-        currstate = (states.UNKOWN,'unknown')
+        currstate = (states.UNKNOWN,'unknown')
         CC2xlib.globals.lock.acquire()
         currstate = self._state
         CC2xlib.globals.lock.release()
@@ -309,7 +312,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         units = ['',self.unitCurrent,self.unitTime]
         #units is a bug fix for iges ics
         limitsmoved = 0
-        
+        wheremoved = ''
         for ro in rol:
             if ro['c'] == "setItem":
                 item = ro['p']
@@ -326,10 +329,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                         if abs(v) > limits[i]:
                             item['v'] = sign * limits[i]
                             limitsmoved = 1
+                            wheremoved = wheremoved + ", " + ourcmd + str(item['v'])
                     if units[i]:
                         item['u'] = units[i]
                            
-        return limitsmoved
+        return (limitsmoved,wheremoved)
 
 
     def applyTransition(self,toapply):

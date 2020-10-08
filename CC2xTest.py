@@ -85,7 +85,7 @@ cmd = 'APPLY:' + transitionnames[0]
 a.Write(cmd)
 time.sleep(5)
 
-a.Off()
+#a.Off()
 
 time.sleep(10)
 
