@@ -40,6 +40,7 @@
   <ItemGroup>
     <Content Include=".gitignore" />
     <Content Include="CC2xlib\example\Erwin-small-HV.res" />
+    <Content Include="CC2xlib\example\iseg-Channel_0_0_0.res" />
     <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\json_data.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\ping.cpython-37.pyc" />
