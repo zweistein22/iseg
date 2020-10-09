@@ -18,7 +18,6 @@ def getshortlac(jsonobj):
     rv += "_"
     rv += jsonobj["c"]
     return rv
-    
 
 def make_requestobject(command,lac,itemtype,val='',unit=''):
     s = lac.split("_")
@@ -33,10 +32,9 @@ def make_requestobject(command,lac,itemtype,val='',unit=''):
         channel = s[2]
     reqobj = {}
     reqobj["c"] = command
-    
     reqobj["p"] = {
         "p": {
-            "l": line, 
+            "l": line,
 		    "a": address,
 			"c": channel
 		},
@@ -52,8 +50,6 @@ def checkResponse(_dict):
         if "trigger" in d:
             if d["trigger"] == "false":
                 raise Exception('trigger', 'not acknolwdged')
-      
-
 
 def login(username,password):
     data = {}
@@ -96,8 +92,3 @@ def request(sessionid,requestpacketobjects):
     data['c'] = requestpacketobjects
     data['r'] = "websocket"
     return json.dumps(data)
-
-
-
-
-

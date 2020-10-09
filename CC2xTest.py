@@ -5,6 +5,7 @@ from os import path
 import toml
 # Add import path for inplace usage
 sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '../../..')))
+from entangle.core import states
 import CC2xlib.globals
 import CC2xlib.json_data
 import CC2xlib.CC2xjsonhandling
@@ -12,7 +13,6 @@ import CC2x
 
 
 
-from entangle.core import states 
 
 
 
@@ -41,10 +41,10 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
             self.maxTripCurrent = data[tango_name]['maxTripCurrent']
             self.maxVoltage = data[tango_name]['maxVoltage']
         self.init()
-       
-   
-        
-             
+
+
+
+
     def setGroupItemValues(self,groupname,cmditem,channelvalues):
         rol = []
         channels = self.jgroup[groupname]['CHANNEL']
@@ -63,9 +63,9 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
             rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,cmditem,channelvalues[j]))
             j = j + 1
         return rol
-    
 
-    
+
+
 
 
 a = PowerSupply()
@@ -114,7 +114,3 @@ sys.exit()
 #   time.sleep(1)
 
 #a.applyTransition("goOff")
-
-
-
-

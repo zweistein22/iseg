@@ -8,9 +8,7 @@
 # **************************************************************************
 import atexit
 import signal
-import asyncio
-import aiohttp
-import websockets
+import copy
 import json
 import time
 from concurrent.futures import TimeoutError as ConnectionTimeoutError
@@ -18,13 +16,17 @@ import base64
 import os
 import inspect
 from os.path import expanduser
+import threading
+
+import asyncio
+import aiohttp
+import websockets
 
 from entangle.core import states
-import threading
+
 
 from entangle.device.iseg import CC2xlib
 from entangle.device.iseg.CC2xlib import json_data
- 
 
 instances = []
 
@@ -74,11 +76,11 @@ async def heartbeat(connection):
             print("heartbeat")
             print(type(inst))    # the exception instance
             print(inst.args)     # arguments stored in .args
-            print(inst)  
+            print(inst)
             break
     return
 
-v_measure_received = 0    
+v_measure_received = 0
 async def listen(connection):
     global sessionid,lock,itemUpdated,websocket,always_monitored,instances,poweron,last_reqobj
     global v_measure_received
@@ -86,7 +88,6 @@ async def listen(connection):
         try :
             response = await connection.recv()
             #print("\r\n"+response)
-            
             dictlist = json.loads(response)
 
             if "d" in dictlist:
@@ -103,7 +104,7 @@ async def listen(connection):
                     clientstr += '_'
                     if not os.access(writeablepath, os.W_OK | os.X_OK):
                         writeablepath = expanduser("~")
-                    
+
                     fullpath = os.path.join(writeablepath,clientstr+filename)
 
                     with open(fullpath, "wb") as file:
@@ -127,10 +128,10 @@ async def listen(connection):
                 if "t" in adict:
                     #if adict["t"] == "info":
                         #print(adict)
-                        
+
                     #if adict["t"] == "response":
                     #    print(adict)
-                        
+
                     if "c" in adict:
                         contentlist = adict["c"]
                         #print("contentlist len="+str(len(contentlist)))
@@ -145,14 +146,16 @@ async def listen(connection):
                             lock.release()
                             if (someinstancesubscribed or (lac in always_monitored)):
                                 command = c["d"]["i"]
-                                if not ( command in ["Status.voltageTerminalMeasure","Status.currentMeasure","Status.heartBeat","System.time","Status.temperature0","Status.temperature1"]): #,"Status.voltageMeasure"]):
+                                if not ( command in ["Status.voltageTerminalMeasure","Status.currentMeasure", \
+                                                        "Status.heartBeat","System.time","Status.temperature0", \
+                                                        "Status.temperature1"]): #,"Status.voltageMeasure"]):
                                     if command == "Status.voltageMeasure":
                                         v_measure_received = v_measure_received + 1
                                         if not (v_measure_received % 5) :
                                             print(c["d"])
                                     else:
                                         print(c["d"])
-                                
+
 
 
                                 if command in ["Status.inputError"]:
@@ -172,13 +175,15 @@ async def listen(connection):
                                     await connection.close()
                                     break
 
-                                if (value and command in ["Error.currentLimitExceeded", "Status.currentTrip", "Status.arc", "Event.arc", "Error.arc"]):
-                                    lock.acquire()
-                                    _state = (states.FAULT,lac + ":"+ command)
-                                    for inst in instances:
-                                        inst._state = _state
-                                        print(_state[1])
-                                    lock.release()
+                                if  command in ["Error.currentLimitExceeded", "Status.currentTrip", "Status.arc", \
+                                                "Event.arc", "Error.arc"]:
+                                    if int(value):  # for these commands we know that value can be converted to int
+                                        lock.acquire()
+                                        _state = (states.FAULT,lac + ":"+ command)
+                                        for inst in instances:
+                                            inst._state = copy.deepcopy(_state)
+                                            print(_state[1])
+                                        lock.release()
 
                                 if lac == always_monitored[1]:
                                     maxconnections = 2
@@ -189,7 +194,7 @@ async def listen(connection):
                                         await logout()
                                         await connection.close()
                                         break
-                                
+
                                 ourdict = {}
                                 lock.acquire()
                                 if lac in itemUpdated:
@@ -209,7 +214,7 @@ async def listen(connection):
                                             poweron = True
                                             _state = (states.ON,command)
                                         for inst in instances:
-                                            inst._state = _state
+                                            inst._state = copy.deepcopy(_state)
                                         if poweron :
                                             print("Power is On")
                                         else:
@@ -232,7 +237,7 @@ async def listen(connection):
                                             requestedvalues = obj[item]
                                             channels = inst.getChannels(groupname)
                                             k = 0
-                                               
+
                                             for ch in channels:
                                                 if ch in itemUpdated:
                                                     od2 = itemUpdated[ch]
@@ -255,10 +260,10 @@ async def listen(connection):
                                                             allrequestedok = False
                                                     else :
                                                         allrequestedok = False
-                                                        
+
                                                 else :
                                                     allrequestedok = False
-                                                    
+
                                                 k = k + 1
 
                                         if not poweron:
@@ -273,26 +278,18 @@ async def listen(connection):
                                             inst.waitstring = ''
                                             inst.waitstringmintime = ''
                                 lock.release()
-
-                                
-
-
-
-                  # fill out our log with the results
         except Exception as inst:
             print(type(inst))    # the exception instance
             print(inst.args)     # arguments stored in .args
             print(inst)          # __str__ allows args to be printed directly,
-            break
-   
     lock.acquire()
     websocket = None
-    lock.release() 
+    lock.release()
 
 async def logout():
     global websocket
     global sessionid
-    
+
     try:
         wsok = 1
         lock.acquire()
@@ -334,17 +331,17 @@ async def login(address,user,password):
             _state =(states.OFF,"CONNECTED : "+sessionid)
         print(_state)
         for inst in instances:
-            inst._state = _state
+            inst._state = copy.deepcopy(_state)
         lock.release()
-       
-        
+
+
     except  ConnectionTimeoutError:
         lock.acquire()
         websocket = None
         _state = (states.FAULT,"Connection timeout")
         print(_state[1])
         lock.release()
-   
+
 
 async def fetch(session, url):
     async with session.get(url,timeout = 5) as response:
@@ -372,7 +369,7 @@ async def getConfig():
     global websocket, sessionid
     cmd = CC2xlib.json_data.getConfig(sessionid)
     await websocket.send(cmd)
-               
+
 
 async def execute_request(requestobjlist):
     global websocket, sessionid, last_reqobj
@@ -382,7 +379,7 @@ async def execute_request(requestobjlist):
     lock.release()
     await websocket.send(cmd)
     return True
-        
+
 
 monitored = []
 
@@ -404,9 +401,9 @@ def reset():
         except asyncio.TimeoutError:
             lock.acquire()
             _state = (states.FAULT,'The logout() coroutine call too long, cancelling...')
-            
+
             for inst in instances:
-                inst._state = _state
+                inst._state = copy.deepcopy(_state)
             print(_state[1])
             lock.release()
             if loop:
@@ -417,7 +414,7 @@ def reset():
             lock.acquire()
             _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
             for inst in instances:
-                inst._state = _state
+                inst._state = copy.deepcopy(_state)
             print(_state[1])
             lock.release()
 
@@ -427,17 +424,17 @@ def reset():
         loop = None
     if future1:
         loop.call_soon_threadsafe(future1.cancel)
-        
+
     if future2:
         loop.call_soon_threadsafe(future2.cancel)
-    
-    
+
+
     while loop:
         time.sleep(1)
     websocket = None
     print("reset end")
     _state = (states.UNKNOWN)
-    
+
 
 def power(value: bool) -> None:
     rol = []
@@ -457,7 +454,7 @@ def monitor(address,user,password):
     for st in tmpstate:
         if st.startswith('CONNECTED'):
             connected = True
-   
+
     if not connected:
         return
     lock.acquire()
@@ -469,8 +466,8 @@ def monitor(address,user,password):
         future1 = asyncio.ensure_future(heartbeat(websocket))
         future2 = asyncio.ensure_future(listen(websocket))
         loop.run_until_complete(asyncio.gather(future1,future2))
-        
-        
+
+
     except:
         pass
     loop.run_until_complete(logout())
@@ -484,7 +481,8 @@ def monitor(address,user,password):
     future2 = None
     loop = None
     print("monitor() exiting..")
-   
+    return
+
 
 
 
@@ -497,7 +495,7 @@ def add_monitor(ipaddress,user,password):
     if ipaddress in monitored:
         alreadyrunning = True
     lock.release()
-    if alreadyrunning: 
+    if alreadyrunning:
         lock.acquire()
         for inst in instances:
             if inst._state[0] == states.INIT:
@@ -511,18 +509,19 @@ def add_monitor(ipaddress,user,password):
     if lmon :
         raise Exception("Unsupported: multiple ip addresses")
     loop = asyncio.new_event_loop()
-    
+
     t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
     t.start()
     power(True)
+    return
 
 
 
-   
 
 def queue_request(rol):
     global sessionid, _state, loop, instances, ctrlcreceived
-    if len(rol) == 0: return
+    if len(rol) == 0:
+        return
     if  ctrlcreceived:
         return
     if not loop:
@@ -531,14 +530,14 @@ def queue_request(rol):
     tmpstate = (states.UNKNOWN)
     while sid == '':
         lock.acquire()
-        tmpstate = _state
+        tmpstate = copy.deepcopy(_state)
         sid = sessionid[:]
         lock.release()
         if states.FAULT in tmpstate :
             return # no action
         if sid == '':
             time.sleep(1)
-    
+
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
     timeout = 15
     try :
@@ -547,7 +546,7 @@ def queue_request(rol):
         lock.acquire()
         _state = (states.FAULT,'The coroutine took too long, cancelling the task...')
         for inst in instances:
-            inst._state = _state
+            inst._state = copy.deepcopy(_state)
         print(_state[1])
         lock.release()
         future.cancel()
@@ -555,16 +554,17 @@ def queue_request(rol):
         lock.acquire()
         _state = (states.FAULT, f'The coroutine raised an exception: {exc!r}')
         for inst in instances:
-            inst._state = _state
+            inst._state = copy.deepcopy(_state)
         print(_state[1])
         lock.release()
-       
+
     else:
         return result
+    return
 
 def cleanup():
     print("CC2x.cleanup()")
-    
+
 
 
 
@@ -572,7 +572,7 @@ def cleanup():
 atexit.register(cleanup)
 
 
-    
+
 def signal_handler(sig, frame):
     global loop, ctrlcreceived
 
@@ -580,8 +580,6 @@ def signal_handler(sig, frame):
     print('You pressed Ctrl+C! please wait up to 8s for exit')
     reset()
 
-    
+
 
 signal.signal(signal.SIGINT, signal_handler)
-   
-    

@@ -23,7 +23,7 @@ class PowerSupply(base.PowerSupply):
         'channel': Prop(str, 'channel.'),
         'operatingstyles': Prop(str, 'operatingstyles.',default=''),
     }
-   
+
     attributes = {
          'jsonstatus':   Attr(str,'',writable = False,memorized = False),
     }
@@ -61,11 +61,11 @@ class PowerSupply(base.PowerSupply):
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.On",0))
         CC2xlib.globals.queue_request(rol)
 
-    
+
     def getItemValue(self, cmd:str)->float:
         rv = 0
         CC2xlib.globals.lock.acquire()
-     
+
         if self.channel in CC2xlib.globals.itemUpdated:
             ours = CC2xlib.globals.itemUpdated[self.channel]
             if cmd in ours:
@@ -78,13 +78,13 @@ class PowerSupply(base.PowerSupply):
     def read_voltage(self):
         return self.getItemValue("Status.voltageMeasure")
 
-    
+
     def write_voltage(self, value):
         rol = []
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.voltageSet",str(value)))
         CC2xlib.globals.queue_request(rol)
 
-    
+
     def read_current(self):
         return self.getItemValue("Status.currentMeasure")
 
@@ -101,4 +101,9 @@ class PowerSupply(base.PowerSupply):
     def get_jsonstatus_unit(self):
         return ''
     def state(self):
-        return self._state
+        currstate = (states.UNKNOWN,'unknown')
+        CC2xlib.globals.lock.acquire()
+        currstate = self._state  # even safer: copy.deepcopy(self._state)
+        CC2xlib.globals.lock.release()
+        return currstate
+      #  return self._state # not good as global listen function can change this value (running in another thread)

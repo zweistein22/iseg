@@ -35,7 +35,7 @@ def ping(ipaddress):
         undesired.append(b'100 % packet loss')
         desired.append(b'%d' % retry + b' received')
         desired.append(b'64 bytes from')
-    if(len(error)  != 0):
+    if len(error)  != 0:
         return False
     for l in lines:
         for u in undesired:
@@ -49,4 +49,3 @@ def ping(ipaddress):
 
 
 #print("ping " +str(ping("172.25.2.24")))
-

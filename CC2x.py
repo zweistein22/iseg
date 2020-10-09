@@ -63,7 +63,7 @@ class CmdProcessor(object):
 
 class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     """Controls an Iseg CC2x high-voltage power supply via websocket."""
-    
+
     commands = {
         'setVoltage':
             Cmd('Sets Voltage for a multiple channels.',
@@ -88,17 +88,17 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                 None,listof(str),'None','transition names',
                 disallowed = (states.FAULT, states.INIT,
                               states.UNKNOWN,)),
-       
+
         'applyTransition':
             Cmd('applies a transition like Off->On, On->Off etc.',
                 str,None, 'transition namé', 'None',
                 disallowed = (states.BUSY,states.FAULT,states.INIT,states.OFF)),
 
-       
+
 
     }
 
-    
+
     properties = {
         'address': Prop(str, 'ip address of device.'),
         'user': Prop(str, 'user.'),
@@ -111,11 +111,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         'maxTripCurrent': Prop(int32, 'maxTripCurrent.'),
         'maxVoltage': Prop(int32, 'maxVoltage.')
     }
-   
+
     attributes = {
          'jsonstatus':   Attr(str,'',writable = False,memorized = False),
     }
- 
+
     def init(self):
         print("init")
         self._state = (states.INIT,self.address)
@@ -125,21 +125,24 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         self.waitstringmintime = ''
         self.tw = None
 
-        # accessed also from other thread, so do the proper locking:
+        # BEGIN accessed also from other thread, so do the proper locking:
         # self.channels_handled
         # self.waitstring
         # self.waitstringmintime
+        # self._state
+        # END
+
         CC2xlib.globals.lock.acquire()
         CC2xlib.globals.instances.append(self)
         CC2xlib.globals.lock.release()
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
-        
-        
+
+
         rol = []
         rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Status.power"))
         self.safequeue(rol)
         self.setOperatingStylesOrCommand()
-        
+
     def safequeue(self, rol):
         rv, msg =  self.checkmovelimitsandbugfix(rol)
         if rv:
@@ -147,16 +150,16 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
             self._state  =(self._state[0], msg +self._state[1])
             CC2xlib.globals.lock.release()
         CC2xlib.globals.queue_request(rol)
-        
+
 
     def setOperatingStylesOrCommand(self):
         groupnames = CC2xlib.CC2xjsonhandling.getGroupNames(self.groups)
         for groupname in groupnames:
             self.rolsetOperatingStyleOrCommand(groupname)
-       
-    
+
+
     def rolsetOperatingStyleOrCommand(self,groupname:str):
-              
+
         channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
         jgroups = json.loads(self.groups)
         for group in jgroups['GROUP']:
@@ -181,7 +184,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                                 #    strvalue = str(float(v))
                                                 rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
                                                 self.safequeue(rol)
-                            
+
                         elif cmds != 'CHANNEL':
                             for channel in channels:
                                 rol = []
@@ -189,12 +192,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                 rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,cmds,str(cmdvalue)))
                                 self.safequeue(rol)
 
-                       
-                                
-               
-                            
 
-  
+
+
+
+
     def delete(self):
         print("CC2x.delete")
         n_instances = 0
@@ -206,12 +208,8 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         CC2xlib.globals.lock.release()
         if not n_instances:
             CC2xlib.globals.reset()
-        
-
-    
 
 
-    
     def checkchannels(self):
         rv = []
         jobjgroups = json.loads(self.groups)
@@ -239,7 +237,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
     def getChannels(self,groupname):
         return CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
-        
+
 
     def On(self):
         CC2xlib.globals.power(True)
@@ -248,11 +246,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         CC2xlib.globals.power(False)
         if self.tw:
             self.tw.join()
-    
+
 
     def getGroupNames(self)->List[str]:
         return CC2xlib.CC2xjsonhandling.getGroupNames(self.groups)
-       
+
 
 
     def getTransitionNames(self):
@@ -271,14 +269,14 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         if not tmp:
             return []
         return CC2xlib.CC2xjsonhandling.getTransitions(tmp)
-        
+
 
     def setVoltage(self, arg):
         if len(arg) != 2 :
             raise Exception('SetVoltage(arg)', 'is not a pair of objects (must be lists)')
         keys = arg[1]
         values = arg[0]
-        
+
         # check channel is one of groups
         if len(keys) != len(values) :
             raise Exception('len list of values ', 'not equal len list of keys')
@@ -290,8 +288,8 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
             rol.append( CC2xlib.json_data.make_requestobject("getItem",keys[j],"Control.voltageSet",''))
             rol.append( CC2xlib.json_data.make_requestobject("setItem",keys[j],"Control.voltageSet",values[j]))
         self.safequeue(rol)
-        
-        
+
+
 
     def read_jsonstatus(self):
         ours = CC2xlib.globals.StatusJson(self.channels_handled)
@@ -332,7 +330,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                             wheremoved = wheremoved + ", " + ourcmd + str(item['v'])
                     if units[i]:
                         item['u'] = units[i]
-                           
+
         return (limitsmoved,wheremoved)
 
 
@@ -354,13 +352,14 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                 workqueue = tr[toapply]
                 #here we actually elaborate the workjobs
                 for nextjob in workqueue:
-                    
+
                     for item in nextjob:
-                        
-                        if(str(item) == 'GROUP') :
+
+                        if str(item) == 'GROUP' :
                             continue
                         getrol = []
-                        # we wait for response, but by sending a "getItem" we force a response which would not come if condition already reached
+                        # we wait for response, but by sending a "getItem" we force a response
+                        #  which would not come if condition already reached
                         groups = nextjob['GROUP']
                         for groupname in groups:
                             if CC2xlib.globals.ctrlcreceived:
@@ -370,8 +369,8 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                             for channel in channels:
                                 getrol.append(CC2xlib.json_data.make_requestobject("getItem",channel,item))
                                 j = j + 1
-                        
-                            
+
+
                         CC2xlib.globals.lock.acquire()
                         self.waitstring =json.dumps(nextjob)
                         self.waitstringmintime = ''
@@ -382,15 +381,15 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                         CC2xlib.globals.lock.release()
 
                         waitforanswer = True
-                        
+
                         if str(item) == "Control.clearEvents":
                             waitforanswer = False
 
                         if waitforanswer:
-                            self.safequeue(getrol) 
+                            self.safequeue(getrol)
 
                         if (str(item).startswith("Control.") or str(item).startswith("Setup.")):
-                            
+
                             values = nextjob[item]
                             groups = nextjob['GROUP']
                             for groupname in groups:
@@ -417,7 +416,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                 print(self.statusstr)
                                 CC2xlib.globals.lock.release()
                                 self.safequeue(rol)
-                               
+
                         if not waitforanswer:
                             CC2xlib.globals.lock.acquire()
                             self.waitstring = ''
@@ -441,8 +440,8 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                 rrlen = 0
                             CC2xlib.globals.lock.release()
                             if doreturn:
-                                return  
-                
+                                return
+
                 CC2xlib.globals.lock.acquire()
                 self.statusstr = "FINISHED:"+toapply
                 if CC2xlib.globals.poweron:
@@ -452,9 +451,3 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                 print(self.statusstr)
                 CC2xlib.globals.lock.release()
                 return
-        
-     
-   
-
-
-

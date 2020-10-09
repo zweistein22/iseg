@@ -26,7 +26,8 @@ def getStatusValue(channel:str,item:str,statusjsonstr:str):
                 if cmd == item:
                     vu = objects[cmd]
                     return vu['v']
-      
+    return None
+
 def getGroupNames(groups:str)->List[str]:
     rv = []
     jobjgroups = json.loads(groups)
@@ -36,14 +37,14 @@ def getGroupNames(groups:str)->List[str]:
             for key, val in group.items():
             #must keep val , otherwise different assignment to key, pylint will report a warning -> dead wrong
                 rv.append(key)
-        return rv
-    
+    return rv
+
 def getChannels(groups:str,groupname:str)->List[str]:
     rv = []
     jobjgroups = json.loads(groups)
     if 'GROUP' in jobjgroups:
         ggroups = jobjgroups['GROUP']
-        
+
         for group in ggroups:
             for key,val in group.items():
             #must keep val , otherwise different assignment to key, pylint will report a warning -> dead wrong
@@ -51,7 +52,7 @@ def getChannels(groups:str,groupname:str)->List[str]:
                     channels = val["CHANNEL"]
                     for ch in channels:
                         rv.append(ch)
-        return rv
+    return rv
 
 def getOperatingStyleNames(operatingstyles:str)->List[str]:
     rv = []
@@ -67,5 +68,3 @@ def getOperatingStyleNames(operatingstyles:str)->List[str]:
              #must keep val , otherwise different assignment to key, pylint will report a warning -> dead wrong
                 rv.append(key)
     return rv
-
-
