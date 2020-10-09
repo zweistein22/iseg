@@ -12,8 +12,6 @@ from entangle import base
 from entangle.core import states , Prop, Attr
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
-import entangle.device.iseg.CC2xlib.json_data
-import entangle.device.iseg.CC2xlib.CC2xjsonhandling
 
 class PowerSupply(base.PowerSupply):
     properties = {

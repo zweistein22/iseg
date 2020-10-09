@@ -282,6 +282,7 @@ async def listen(connection):
             print(type(inst))    # the exception instance
             print(inst.args)     # arguments stored in .args
             print(inst)          # __str__ allows args to be printed directly,
+            break
     lock.acquire()
     websocket = None
     lock.release()
@@ -520,12 +521,13 @@ def add_monitor(ipaddress,user,password):
 
 def queue_request(rol):
     global sessionid, _state, loop, instances, ctrlcreceived
+    result = None
     if len(rol) == 0:
-        return
+        return result
     if  ctrlcreceived:
-        return
+        return result
     if not loop:
-        return
+        return result
     sid =''
     tmpstate = (states.UNKNOWN)
     while sid == '':
@@ -534,10 +536,9 @@ def queue_request(rol):
         sid = sessionid[:]
         lock.release()
         if states.FAULT in tmpstate :
-            return # no action
+            return result# no action
         if sid == '':
             time.sleep(1)
-
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), loop)
     timeout = 15
     try :
@@ -557,10 +558,7 @@ def queue_request(rol):
             inst._state = copy.deepcopy(_state)
         print(_state[1])
         lock.release()
-
-    else:
-        return result
-    return
+    return result
 
 def cleanup():
     print("CC2x.cleanup()")
