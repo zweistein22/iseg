@@ -3,6 +3,8 @@ import logging
 import time
 from os import path
 import toml
+import json
+
 # Add import path for inplace usage
 sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '../../..')))
 from entangle.core import states
@@ -12,10 +14,20 @@ import CC2xlib.CC2xjsonhandling
 import CC2x
 
 
+operatingstyle="""
+{
+    "Control.currentSet" : 1.0,
+    "Setup.delayedTripTime" : 500,
+	"Setup.delayedTripAction" : 2
+}
+"""
 
+jos = json.loads(operatingstyle)
 
-
-
+for style in jos:
+    print(style)
+    v = jos[style]
+    print(v)
 
 class PowerSupply(CC2x.IntelligentPowerSupply):
 
@@ -23,8 +35,9 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
     #log = logging.getLogger()
     def __init__(self,logger=None):
         #super(CC2x.IntelligentPowerSupply, self).__init__(log)
-        self.state = states.INIT
-        with open('CC2xlib/example/Erwin-small-HV.res') as fd:
+
+        #with open('CC2xlib/example/iseg-Channel_0_0_0.res') as fd:
+        with open('CC2xlib/example/HV-TEST.res') as fd:
             data = toml.load(fd)
             tango_name = 'test/Erwin/HV-Powersupply'
             self.address = data[tango_name]['address']
@@ -36,10 +49,7 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
                 self.groups = data[tango_name]['groups']
             if 'operatingstyles' in data[tango_name]:
                 self.operatingstyles = data[tango_name]['operatingstyles']
-            self.unitTime =  data[tango_name]['unitTime']
-            self.unitCurrent = data[tango_name]['unitCurrent']
-            self.maxTripCurrent = data[tango_name]['maxTripCurrent']
-            self.maxVoltage = data[tango_name]['maxVoltage']
+        self._state = (states.INIT,self.address)
         self.init()
 
 
@@ -69,6 +79,13 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
 
 
 a = PowerSupply()
+while True:
+  time.sleep(1)
+  st = a._state
+
+  st2 = a.state()
+  if st[0] != states.INIT:
+      break
 
 n_items = a.read_availableLines()
 
@@ -83,21 +100,51 @@ for i in range(n_items):
 transitionnames = a.MultiCommunicate((delays,cmds))
 cmd = 'APPLY:' + transitionnames[0]
 a.Write(cmd)
-time.sleep(5)
 
-#a.Off()
-
-time.sleep(10)
-
-for i in range(0,7):
-    print("Cycle"+str(i))
+for i in range(0,25):
     time.sleep(1)
-    a.delete()
-    a = PowerSupply()
+    print(a.state())
 
-print("END CYCLES")
 
-sys.exit()
+
+while True:
+  time.sleep(1)
+  st = a.state()
+  if st[0] != states.BUSY:
+      break
+
+print("here")
+print(st)
+statusjsonstr = a.read_jsonstatus()
+#print(statusjsonstr)
+a.Off()
+time.sleep(3)
+a.On()
+
+while True:
+  time.sleep(1)
+  st = a._state
+
+  st2 = a.state()
+  if st[0] != states.INIT:
+      break
+
+
+a.Write(cmd)
+
+for i in range(0,25):
+    time.sleep(1)
+    print(a.state())
+
+#for i in range(0,7):
+#    print("Cycle"+str(i))
+#    time.sleep(1)
+#    a.delete()
+#    a = PowerSupply()
+
+#print("END CYCLES")
+
+#sys.exit()
 
 #t = a.getTransitionNames()
 #a.setVoltage(([29],['0_0_0']))

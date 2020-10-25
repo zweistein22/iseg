@@ -15,10 +15,10 @@ transitions="""
 {
 "TRANSITION" :[
 {"goOn":  [
-              {"GROUP":["Window"],"Control.voltageSet": [-1000]},
+              {"GROUP":["Window"],"Control.voltageSet": [-40]},
               {"GROUP":["Window"],"Control.on": [1] },
               {"GROUP":["Window"],"Status.ramping": [0] },
-              {"GROUP":["Anodes"],"Control.voltageSet": [2075,2100,2085]},
+              {"GROUP":["Anodes"],"Control.voltageSet": [75,100,85]},
               {"GROUP":["Anodes"],"Control.on": [1,1,1] },
               {"GROUP":["CathodeStripes"],"Control.voltageSet": [75,80]},
               {"GROUP":["CathodeStripes"],"Control.on": [1,1]},
@@ -59,15 +59,17 @@ groups="""
 operatingstyles="""
 {
   "OPERATNGSTYLE":
-  [ 
+  [
     {"normal": {
-                "Control.currentSet" : 0.5,
-                "Setup.delayedTripTime" : 150,
+                "Control.clearAll" : 1 ,
+                "Control.currentSet" : 2,
+                "Setup.delayedTripTime" : 500,
                 "Setup.delayedTripAction": 2
      }},
-	 {"slow": {    
+	 {"slow": {
+                    "Control.clearAll" : 1,
                     "Control.currentSet" : 2,
-                    "Setup.delayedTripTime" : 500,
+                    "Setup.delayedTripTime" : 800,
                     "Setup.delayedTripAction": 2
 	 }}
    ]

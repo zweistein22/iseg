@@ -7,10 +7,6 @@ absmin = 0
 absmax = 0
 transitions = ''
 operatingstyles = ''
-unitTime = 'ms'
-unitCurrent ='µA'
-maxTripCurrent = '5'
-maxVoltage = '2200'
 
 groups="""
 {
@@ -32,3 +28,10 @@ password = 'password'
 absmin = 0
 absmax = 0
 channel = '0_0_0'
+operatingstyle="""
+{
+    "Control.currentSet" : 1.0,
+    "Setup.delayedTripTime" : 500,
+	"Setup.delayedTripAction" : 2
+}
+"""

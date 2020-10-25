@@ -7,7 +7,7 @@
 #* by the Free Software Foundation; *
 # **************************************************************************
 
-
+import json
 from entangle import base
 from entangle.core import states , Prop, Attr
 from  entangle.device.iseg import CC2xlib
@@ -19,7 +19,7 @@ class PowerSupply(base.PowerSupply):
         'user': Prop(str, 'user.'),
         'password': Prop(str, 'pw.'),
         'channel': Prop(str, 'channel.'),
-        'operatingstyles': Prop(str, 'operatingstyles.',default=''),
+        'operatingstyle': Prop(str, 'operatingstyle.',default=''),
     }
 
     attributes = {
@@ -31,21 +31,30 @@ class PowerSupply(base.PowerSupply):
         self.channels_handled = [self.channel]
         self.waitstring =''
         self.waitstringmintime = ''
-        CC2xlib.globals.lock.acquire()
-        CC2xlib.globals.instances.append(self)
-        CC2xlib.globals.lock.release()
+        CC2xlib.globals.CRATE.lock.acquire()
+        CC2xlib.globals.CRATE.instances.append(self)
+        CC2xlib.globals.CRATE.lock.release()
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
 
+    def rolisAlive(self):
+        # this function is called once the crate is alive (= can accept parameters)
+        rol = []
+        print("rolisAlive")
+        jos = json.loads(self.operatingstyle)
+        for item in jos:
+            v = jos[item]
+            rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,item,v))
+        return rol
 
     def delete(self):
         print("isegCC2xChannel.delete")
         n_instances = 0
-        CC2xlib.globals.lock.acquire()
-        for i in CC2xlib.globals.instances:
+        CC2xlib.globals.CRATE.lock.acquire()
+        for i in CC2xlib.globals.CRATE.instances:
             if i == self :
-                CC2xlib.globals.instances.remove(i)
-                n_instances = len(CC2xlib.globals.instances)
-        CC2xlib.globals.lock.release()
+                CC2xlib.globals.CRATE.instances.remove(i)
+                n_instances = len(CC2xlib.globals.CRATE.instances)
+        CC2xlib.globals.CRATE.lock.release()
         if not n_instances:
             CC2xlib.globals.reset()
 
@@ -62,14 +71,14 @@ class PowerSupply(base.PowerSupply):
 
     def getItemValue(self, cmd:str)->float:
         rv = 0
-        CC2xlib.globals.lock.acquire()
+        CC2xlib.globals.CRATE.lock.acquire()
 
-        if self.channel in CC2xlib.globals.itemUpdated:
-            ours = CC2xlib.globals.itemUpdated[self.channel]
+        if self.channel in CC2xlib.globals.CRATE.itemUpdated:
+            ours = CC2xlib.globals.CRATE.itemUpdated[self.channel]
             if cmd in ours:
                 vu = ours[cmd]
                 rv = float(vu['v'])
-        CC2xlib.globals.lock.release()
+        CC2xlib.globals.CRATE.lock.release()
         return rv
 
 
@@ -100,8 +109,9 @@ class PowerSupply(base.PowerSupply):
         return ''
     def state(self):
         currstate = (states.UNKNOWN,'unknown')
-        CC2xlib.globals.lock.acquire()
-        currstate = self._state  # even safer: copy.deepcopy(self._state)
-        CC2xlib.globals.lock.release()
+        CC2xlib.globals.CRATE.lock.acquire()
+        currstate =  self._state  # copy.deepcopy(self._state)
+        #ouritems = CC2xlib.globals.itemUpdated[self.channel] #  all messages for channel
+        CC2xlib.globals.CRATE.lock.release()
         return currstate
       #  return self._state # not good as global listen function can change this value (running in another thread)

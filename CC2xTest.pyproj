@@ -39,12 +39,14 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
-    <Content Include="CC2xlib\example\Erwin-small-HV.res" />
+    <Content Include="172_25_25_56_getItemsInfo.xml" />
+    <Content Include="CC2xlib\example\HV-TEST.res" />
     <Content Include="CC2xlib\example\iseg-Channel_0_0_0.res" />
     <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\json_data.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\ping.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\__init__.cpython-37.pyc" />
+    <Content Include="pylintrc" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

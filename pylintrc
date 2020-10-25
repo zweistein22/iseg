@@ -12,7 +12,7 @@ profile=no
 
 # Add <file or directory> to the black list. It should be a base name, not a
 # path. You may set this option multiple times.
-ignore = .git,res_qt4.py,res_qt5.py
+ignore = .git, res_qt4.py, res_qt5.py
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -250,6 +250,9 @@ ext-import-graph=
 # not be disabled)
 int-import-graph=
 
+disable=
+        ,import-error
+        ,unresolved-import
 
 [CLASSES]
 
