@@ -30,7 +30,7 @@ for style in jos:
     v = jos[style]
     print(v)
 
-respath = 'CC2xlib/example/iseg-Channel_0_1_6.res'
+respath = 'CC2xlib/example/Erwin-both.res'
 #respath = 'CC2xlib/example/HV-TEST.res'
 
 
@@ -59,7 +59,7 @@ class IntelligentPowerSupply(CC2x.IntelligentPowerSupply):
 
         with open(respath) as fd:
             data = toml.load(fd)
-            tango_name = 'test/Erwin/HV-Powersupply-ModulesSetting'
+            tango_name = 'test/Erwin/HV-IntelligentPowersupply'
             self.address = data[tango_name]['address']
             self.user = data[tango_name]['user']
             self.password = data[tango_name]['password']
@@ -108,17 +108,17 @@ for i in range(0,25):
     time.sleep(1)
     print(a.state())
 
-b = PowerSupply()
-time.sleep(1)
-b.Off()
-time.sleep(1)
-b.On()
-time.sleep(1)
-for i in range(0,20):
-      z = b.state()
-      print(z)
-      time.sleep(1)
-      b.write_voltage(102.5)
+#b = PowerSupply()
+#time.sleep(1)
+#b.Off()
+#time.sleep(1)
+#b.On()
+#time.sleep(1)
+#for i in range(0,20):
+#      z = b.state()
+#      print(z)
+#      time.sleep(1)
+#      b.write_voltage(102.5)
 
 
 

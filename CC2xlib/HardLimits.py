@@ -7,6 +7,8 @@
 #* by the Free Software Foundation; *
 # **************************************************************************
 
+from entangle.device.iseg.CC2xlib import json_data
+
 class HardLimits:
     unitTime = 'ms'
     unitCurrent = 'uA'
@@ -39,7 +41,8 @@ class HardLimits:
                         if abs(v) > limits[i]:
                             item['v'] = str(sign * limits[i])
                             limitsmoved = 1
-                            wheremoved = wheremoved + ", " + ourcmd  + " CHANGED: ("+str(v)+"=>" + str(item['v']+")")
+                            lac = json_data.getshortlac(item['p'])
+                            wheremoved = wheremoved + ", " +lac +":" + ourcmd  + " CHANGED: ("+str(v)+"=>" + str(item['v']+")")
                     if units[i]:
                         item['u'] = units[i]
 

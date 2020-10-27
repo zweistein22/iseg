@@ -21,7 +21,7 @@ from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
 import entangle.device.iseg.CC2xlib.CC2xjsonhandling
-
+from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
 
 class CmdProcessor(object):
     lastcmd = ''
@@ -328,16 +328,46 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         for tr in transitions:
             if toapply in tr:
                 workqueue = tr[toapply]
+                changemsg = ''
+                for nextjob in workqueue: # here just a HardLimits parameter check and adjust
+                    for item in nextjob:
+                        if str(item) == 'GROUP' :
+                            continue
+                        getrol = []
+                        if (str(item).startswith("Control.") or str(item).startswith("Setup.")):
+                            values = nextjob[item]
+                            groups = nextjob['GROUP']
+                            for groupname in groups:
+                                channels = CC2xlib.CC2xjsonhandling.getChannels(self.groups,groupname)
+                                j = 0
+                                for channel in channels:
+                                    rol = []
+                                    rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,values[j]))
+                                    rv, msg = HardLimits.checkmovelimitsandbugfix(rol)
+                                    if rv:
+                                        if changemsg:
+                                            changemsg += ", "
+                                        changemsg += msg
+                                        p = rol[0]['p']
+                                        v = float(p['v'])
+                                        values[j] = v
+                                        #nextjob[item] = values , not needed, by ref already , python!
+                                    j = j + 1
+
+                if changemsg:
+                     print(changemsg)
+                     CC2xlib.globals.CRATE.lock.acquire()
+                     self._state = (self._state[0], self._state[1] + " : "+changemsg)
+                     CC2xlib.globals.CRATE.lock.release()
                 #here we actually elaborate the workjobs
                 for nextjob in workqueue:
-
                     for item in nextjob:
-
                         if str(item) == 'GROUP' :
                             continue
                         getrol = []
                         # we wait for response, but by sending a "getItem" we force a response
                         #  which would not come if condition already reached
+                        values = nextjob[item]
                         groups = nextjob['GROUP']
                         for groupname in groups:
                             if CC2xlib.globals.ctrlcreceived:
