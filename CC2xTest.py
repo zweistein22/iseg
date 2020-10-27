@@ -118,6 +118,7 @@ for i in range(0,20):
       z = b.state()
       print(z)
       time.sleep(1)
+      b.write_voltage(102.5)
 
 
 

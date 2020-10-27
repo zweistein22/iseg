@@ -11,7 +11,7 @@ class HardLimits:
     unitTime = 'ms'
     unitCurrent = 'uA'
     maxTripCurrent = 10
-    maxVoltage = 2200
+    maxVoltage = 90
     tripEventAllModulesOff = False
 
 
@@ -31,15 +31,15 @@ class HardLimits:
                 ourcmd = item['i']
                 if ourcmd in cmds:
                     i = cmds.index( ourcmd)
-                    v = item['v']
+                    v = float(item['v'])
                     sign = 1
                     if v < 0:
                         sign = -1
                     if limits[i]:
                         if abs(v) > limits[i]:
-                            item['v'] = sign * limits[i]
+                            item['v'] = str(sign * limits[i])
                             limitsmoved = 1
-                            wheremoved = wheremoved + ", " + ourcmd + str(item['v'])
+                            wheremoved = wheremoved + ", " + ourcmd  + " CHANGED:" + str(item['v'])
                     if units[i]:
                         item['u'] = units[i]
 

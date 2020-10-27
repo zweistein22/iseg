@@ -443,7 +443,7 @@ def reset():
             print("logout call done")
         except asyncio.TimeoutError:
             CRATE.lock.acquire()
-            CRATE._state = (states.FAULT,'The logout() coroutine call too long, cancelling...')
+            CRATE._state = (states.FAULT,'The logout() coroutine call took too long, cancelling...')
 
             for inst in CRATE.instances:
                 inst._state = copy.deepcopy(CRATE._state)
@@ -562,33 +562,7 @@ def add_monitor(ipaddress,user,password):
     t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
     t.start()
     power(True)
-    #t2 = threading.Thread(target=power_after_init, args=(True,))
-    #t2.start()
     return
-
-def power_after_init(poweron):
-    power(poweron) # triggers Status.isAlive response
-    for i in range(0,20):
-        time.sleep(1)
-        canbreak = True
-        CRATE.lock.acquire()
-        if  CRATE._state[0] == states.INIT:
-            canbreak = False
-        if CRATE._state[0] == states.UNKNOWN:
-            canbreak = False
-        CRATE.lock.release()
-        if canbreak:
-            break
-    if not canbreak:
-        print("power_after_init , ERROR: state.INIT")
-
-    if int(poweron):
-         rol = []
-         rol.append( CC2xlib.json_data.make_requestobject("setItem",CRATE.always_monitored[0],"Control.power",str(int(poweron))))
-        # rol.append( CC2xlib.json_data.make_requestobject("getItem",CRATE.always_monitored[0],"Status.power"))
-         queue_request(rol)
-
-
 
 def queue_request_delayed_setstate(rol,delay):
     time.sleep(delay)

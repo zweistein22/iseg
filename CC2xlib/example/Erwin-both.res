@@ -129,7 +129,7 @@ operatingstyle="""
 }
 """
 
-["test/Erwin/HV-Powersupply-CahtodeStripe1"]
+["test/Erwin/HV-Powersupply-CathodeStripe1"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -147,7 +147,7 @@ operatingstyle="""
 }
 """
 
-["test/Erwin/HV-Powersupply-CahtodeStripe2"]
+["test/Erwin/HV-Powersupply-CathodeStripe2"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'

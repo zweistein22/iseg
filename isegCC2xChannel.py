@@ -12,6 +12,7 @@ from entangle import base
 from entangle.core import states , Prop, Attr
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
+from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
 
 class PowerSupply(base.PowerSupply):
     properties = {
@@ -110,6 +111,9 @@ class PowerSupply(base.PowerSupply):
     def write_voltage(self, value):
         rol = []
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.voltageSet",str(value)))
+        rv, msg =  HardLimits.checkmovelimitsandbugfix(rol)
+        if rv:
+            self._state  =(self._state[0], msg +self._state[1])
         CC2xlib.globals.queue_request(rol)
 
 
