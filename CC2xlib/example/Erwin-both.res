@@ -73,3 +73,115 @@ operatingstyles="""
    ]
 }
 """
+
+
+["test/Erwin/HV-Powersupply-Anode1"]
+type = "iseg.isegCC2xChannel.PowerSupply"
+address = '172.25.25.56'
+user = 'admin'
+password = 'password'
+absmin = 0
+absmax = 0
+channel = '0_0_0'
+
+operatingstyle="""
+{
+    "Control.clearAll" : 1,
+	"Control.currentSet" : 1.5,
+    "Setup.delayedTripTime" : 1500,
+	"Setup.delayedTripAction" : 2
+}
+"""
+
+["test/Erwin/HV-Powersupply-Anode2"]
+type = "iseg.isegCC2xChannel.PowerSupply"
+address = '172.25.25.56'
+user = 'admin'
+password = 'password'
+absmin = 0
+absmax = 0
+channel = '0_0_1'
+
+operatingstyle="""
+{
+    "Control.clearAll" : 1,
+	"Control.currentSet" : 1.5,
+    "Setup.delayedTripTime" : 1500,
+	"Setup.delayedTripAction" : 2
+}
+"""
+
+["test/Erwin/HV-Powersupply-Anode3"]
+type = "iseg.isegCC2xChannel.PowerSupply"
+address = '172.25.25.56'
+user = 'admin'
+password = 'password'
+absmin = 0
+absmax = 0
+channel = '0_0_2'
+
+operatingstyle="""
+{
+    "Control.clearAll" : 1,
+	"Control.currentSet" : 1.5,
+    "Setup.delayedTripTime" : 1500,
+	"Setup.delayedTripAction" : 2
+}
+"""
+
+["test/Erwin/HV-Powersupply-CahtodeStripe1"]
+type = "iseg.isegCC2xChannel.PowerSupply"
+address = '172.25.25.56'
+user = 'admin'
+password = 'password'
+absmin = 0
+absmax = 0
+channel = '0_0_4'
+
+operatingstyle="""
+{
+    "Control.clearAll" : 1,
+	"Control.currentSet" : 1.5,
+    "Setup.delayedTripTime" : 1500,
+	"Setup.delayedTripAction" : 2
+}
+"""
+
+["test/Erwin/HV-Powersupply-CahtodeStripe2"]
+type = "iseg.isegCC2xChannel.PowerSupply"
+address = '172.25.25.56'
+user = 'admin'
+password = 'password'
+absmin = 0
+absmax = 0
+channel = '0_0_5'
+
+operatingstyle="""
+{
+    "Control.clearAll" : 1,
+	"Control.currentSet" : 1.5,
+    "Setup.delayedTripTime" : 1500,
+	"Setup.delayedTripAction" : 2
+}
+"""
+
+
+["test/Erwin/HV-Powersupply-Window"]
+type = "iseg.isegCC2xChannel.PowerSupply"
+address = '172.25.25.56'
+user = 'admin'
+password = 'password'
+absmin = 0
+absmax = 0
+channel = '0_0_7'
+
+operatingstyle="""
+{
+    "Control.clearAll" : 1,
+	"Control.currentSet" : 1.5,
+    "Setup.delayedTripTime" : 1500,
+	"Setup.delayedTripAction" : 2
+}
+"""
+
+

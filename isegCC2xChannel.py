@@ -6,7 +6,7 @@
 #* it under the terms of the GNU General Public License v3 as published *
 #* by the Free Software Foundation; *
 # **************************************************************************
-
+import copy
 import json
 from entangle import base
 from entangle.core import states , Prop, Attr
@@ -27,10 +27,22 @@ class PowerSupply(base.PowerSupply):
     }
 
     def init(self):
+        print("isegCC2cChannel.PowerSupply.init")
+        self.mode = 'voltage'
         self._state = (states.INIT,self.address)
         self.channels_handled = [self.channel]
         self.waitstring =''
         self.waitstringmintime = ''
+        # begin below should turn off disallowed attribute for off state, but it is not working
+        tu = self.attributes['value']
+        daw = list(tu.disallowed_write)
+        if states.OFF in daw:
+            daw.remove(states.OFF)
+        tu1 = tuple(daw)
+        tu.disallowed_write = tu1
+        #idea: put this in __init__
+        # probably attribute is read in before by deviceworker -> check if time permitting.
+        #end
         CC2xlib.globals.CRATE.lock.acquire()
         CC2xlib.globals.CRATE.instances.append(self)
         CC2xlib.globals.CRATE.lock.release()
@@ -39,7 +51,7 @@ class PowerSupply(base.PowerSupply):
     def rolisAlive(self):
         # this function is called once the crate is alive (= can accept parameters)
         rol = []
-        print("rolisAlive")
+        print("isegCC2cChannel.PowerSupply.rolisAlive")
         jos = json.loads(self.operatingstyle)
         for item in jos:
             v = jos[item]
@@ -59,13 +71,22 @@ class PowerSupply(base.PowerSupply):
             CC2xlib.globals.reset()
 
     def On(self):
+        print("on")
         rol = []
-        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.On",1))
+        #instrol = self.rolisAlive()
+        #rv, msg =  CC2xlib.globals.HardLimits.checkmovelimitsandbugfix(instrol)
+        #if rv:
+        #     self._state  =(self._state[0], msg +self._state[1])
+        #rol.extend(instrol)
+        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.on",1))
         CC2xlib.globals.queue_request(rol)
+        self._state = (self._state[0], '')
+
 
     def Off(self):
+        print("off")
         rol = []
-        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.On",0))
+        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.on",0))
         CC2xlib.globals.queue_request(rol)
 
 
@@ -96,9 +117,10 @@ class PowerSupply(base.PowerSupply):
         return self.getItemValue("Status.currentMeasure")
 
     def write_current(self, value):
-        rol = []
-        rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.currentSet",str(value)))
-        CC2xlib.globals.queue_request(rol)
+        if self.mode == 'current':
+           rol = []
+           rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.currentSet",str(value)))
+           CC2xlib.globals.queue_request(rol)
 
 
     def read_jsonstatus(self):
@@ -110,8 +132,38 @@ class PowerSupply(base.PowerSupply):
     def state(self):
         currstate = (states.UNKNOWN,'unknown')
         CC2xlib.globals.CRATE.lock.acquire()
+
+        if self.channel in CC2xlib.globals.CRATE.itemUpdated:
+            ouritems = CC2xlib.globals.CRATE.itemUpdated[self.channel] #  all messages for channel
+            #print(ouritems)
+            for item in ouritems:
+                vu = ouritems[item]
+                if not 'v' in vu:
+                    continue
+                v = vu['v']
+                if item == 'Status.runningState':
+                    if str(v) == 'ok':
+                        self._state = (states.ON, self._state[1])
+                    if str(v) == 'off':
+                        self._state = (states.OFF, self._state[1])
+                if item == 'Control.on':
+                    if str(v) == '1':
+                        self._state = (states.ON, self._state[1])
+                    if str(v) == '0':
+                        self._state = (states.OFF, self._state[1])
+                if item == 'Status.ramping':
+                     if str(v) == '1':
+                        self._state = (states.BUSY, self._state[1])
+                if item == 'Event.currentTrip':
+                    if str(v) == '1':
+                         self._state = (states.ALARM,CC2xlib.globals.CRATE._state[1])
+
+        if CC2xlib.globals.CRATE._state[0] in [states.INIT, states.UNKNOWN]:
+            self._state = (self._state[0], "Wait...")
+        else:
+            if self._state[1] == "Wait...":
+                self._state = (self._state[0],'')
         currstate =  self._state  # copy.deepcopy(self._state)
-        #ouritems = CC2xlib.globals.itemUpdated[self.channel] #  all messages for channel
         CC2xlib.globals.CRATE.lock.release()
         return currstate
       #  return self._state # not good as global listen function can change this value (running in another thread)

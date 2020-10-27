@@ -26,6 +26,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CC2xlib\globals.py" />
+    <Compile Include="CC2xlib\HardLimits.py" />
     <Compile Include="CC2xlib\json_data.py" />
     <Compile Include="CC2xlib\ping.py" />
     <Compile Include="CC2xlib\__init__.py" />
@@ -41,7 +42,7 @@
     <Content Include=".gitignore" />
     <Content Include="172_25_25_56_getItemsInfo.xml" />
     <Content Include="CC2xlib\example\HV-TEST.res" />
-    <Content Include="CC2xlib\example\iseg-Channel_0_0_0.res" />
+    <Content Include="CC2xlib\example\iseg-Channel_0_1_6.res" />
     <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\json_data.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\ping.cpython-37.pyc" />

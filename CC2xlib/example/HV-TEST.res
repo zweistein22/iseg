@@ -1,11 +1,11 @@
-["test/Erwin/HV-Powersupply"]
+["test/Erwin/HV-IntelligentPowersupply"]
 type = "iseg.CC2x.IntelligentPowerSupply"
 address = '172.25.25.56'
 user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
-
+tripeventallmodulesoff = 1
 
 transitions="""
 {

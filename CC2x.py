@@ -10,12 +10,13 @@
 
 
 import json
+import copy
 import threading
 import time
 from typing import List
 
 from entangle import base
-from entangle.core import states, Prop, Attr, Cmd, pair, listof, uint32
+from entangle.core import states, Prop, Attr, Cmd, pair, listof, uint32, boolean
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
 import entangle.device.iseg.CC2xlib.json_data
@@ -92,7 +93,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
         'applyTransition':
             Cmd('applies a transition like Off->On, On->Off etc.',
-                str,None, 'transition namé', 'None',
+                str,None, 'transition name', 'None',
                 disallowed = (states.BUSY,states.FAULT,states.INIT,states.OFF)),
 
 
@@ -107,14 +108,13 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         'transitions': Prop(str, 'transitions.',default=''),
         'groups': Prop(str, 'groups.'),
         'operatingstyles': Prop(str, 'operatingstyles.',default=''),
+        'tripeventallmodulesoff': Prop(boolean, 'operatingstyles.',default=False),
     }
-
     attributes = {
          'jsonstatus':   Attr(str,'',writable = False,memorized = False),
     }
 
     def init(self):
-        print("init")
         self._state = (states.INIT,self.address)
         #checkoperatingstates(operatingstates)
         self.channels_handled = self.checkchannels()
@@ -122,26 +122,21 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         self.waitstringmintime = ''
         self.tw = None
 
-        # BEGIN accessed also from other thread, so do the proper locking:
-        # self.channels_handled
+        # these are accessed in writing also from other thread, so do the proper locking:
         # self.waitstring
         # self.waitstringmintime
         # self._state
-        # END
+
 
         CC2xlib.globals.CRATE.lock.acquire()
+        CC2xlib.globals.HardLimits.tripEventAllModulesOff = self.tripeventallmodulesoff
         CC2xlib.globals.CRATE.instances.append(self)
         CC2xlib.globals.CRATE.lock.release()
         CC2xlib.globals.add_monitor(self.address,self.user,self.password)
 
-        #rol = []
-        #rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.always_monitored[0],"Status.power"))
-        #self.safequeue(rol)
-
-
     def rolisAlive(self):
+        print("CC2x.IntelligentPowerSupply.rolisAlive")
         rol = []
-        print("rolisAlive")
         rol.extend(self.setOperatingStylesOrCommand())
         return rol
 
@@ -159,7 +154,6 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         groupnames = CC2xlib.CC2xjsonhandling.getGroupNames(self.groups)
         for groupname in groupnames:
             rol.extend(self.rolsetOperatingStyleOrCommand(groupname))
-        #print("setOperatingStylesOrCommand")
         return rol
 
 
@@ -241,9 +235,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
     def On(self):
         CC2xlib.globals.power(True)
-        #rol = []
-        #rol.append( CC2xlib.json_data.make_requestobject("setItem",CC2xlib.globals.always_monitored[0],"Control.clearEvents",1))
-        #self.setOperatingStylesOrCommand()
+
 
     def Off(self):
         CC2xlib.globals.power(False)
@@ -301,11 +293,17 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     def get_jsonstatus_unit(self):
         return ''
     def state(self):
-        currstate = (states.UNKNOWN,'unknown')
         CC2xlib.globals.CRATE.lock.acquire()
-        currstate = self._state
+        if self._state[0] in  [states.INIT, states.UNKNOWN]:
+            self._state = copy.deepcopy(CC2xlib.globals.CRATE._state)
+        if CC2xlib.globals.CRATE._state[0] in  [states.OFF, states.ALARM] :
+            self._state =  copy.deepcopy(CC2xlib.globals.CRATE._state)
+        if CC2xlib.globals.CRATE._state[0]  == states.ON:
+            if self._state[0] not in [states.BUSY, states.ALARM, states.FAULT] :
+                self._state =  copy.deepcopy(CC2xlib.globals.CRATE._state)
+                self._state = (CC2xlib.globals.CRATE._state[0], self._state[1])
         CC2xlib.globals.CRATE.lock.release()
-        return currstate
+        return self._state
 
 
 
@@ -320,14 +318,11 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     def applytransitionworker(self,toapply):
         doreturn = 0
         CC2xlib.globals.CRATE.lock.acquire()
-        #if self._state[0] == states.ALARM:
-        #    doreturn = 1
-        #else:
         self._state = (states.BUSY,"START:"+toapply)
+        CC2xlib.globals.CRATE._state =(states.ON,"CONNECTED : "+CC2xlib.globals.CRATE.sessionid)
         print(self._state[1])
         CC2xlib.globals.CRATE.lock.release()
-        #if doreturn:
-        #    return
+
         transitions = self.getTransitions()
         for tr in transitions:
             if toapply in tr:
@@ -359,9 +354,12 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                         else:
                             self.waitstring =json.dumps(nextjob)
                             self.waitstringmintime = ''
+                        CC2xlib.globals.CRATE.lock.release()
 
                         if doreturn:
                             return
+
+                        CC2xlib.globals.CRATE.lock.acquire()
                         if not (str(item).startswith("Control.") or str(item).startswith("Setup.")):
                             self.statusstr = "WAITFOR_CONDITION:"+str(nextjob)
                             self._state = (states.BUSY,self.statusstr)
@@ -389,7 +387,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                     j = j + 1
 
                                 CC2xlib.globals.CRATE.lock.acquire()
-                                if self._state[0] == states.ALARM:
+                                if CC2xlib.globals.CRATE._state[0] == states.ALARM:
                                     doreturn = 1
                                 if not CC2xlib.globals.CRATE.poweron:
                                     doreturn = 1
@@ -405,13 +403,14 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                         if not waitforanswer:
                             CC2xlib.globals.CRATE.lock.acquire()
                             self.waitstring = ''
-                            time.sleep(2)
+                            time.sleep(2)  # needed to avoid  crate firmware sloppyness (Status.ramping 1 comes only after litte delay)
                             CC2xlib.globals.CRATE.lock.release()
 
                         rrlen = 1
                         while rrlen:
                             CC2xlib.globals.CRATE.lock.acquire()
-                            if self._state[0] == states.ALARM:
+                            if CC2xlib.globals.CRATE._state[0] == states.ALARM:
+                                self._state = copy.deepcopy(CC2xlib.globals.CRATE._state)
                                 doreturn = 1
                             if not CC2xlib.globals.CRATE.poweron:
                                 doreturn = 1
@@ -428,17 +427,14 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
 
                 CC2xlib.globals.CRATE.lock.acquire()
-                if self._state[0] == states.ALARM:
-                    self.statusstr = self._state[1]
+                if CC2xlib.globals.CRATE._state[0] == states.ALARM:
+                    #self.statusstr = CC2xlib.globals.CRATE._state[1]
                     doreturn = 1
                 if not CC2xlib.globals.CRATE.poweron:
                     doreturn = 1
                 if not doreturn:
-                    self.statusstr = "FINISHED:"+toapply
-                    if CC2xlib.globals.CRATE.poweron:
-                        self._state = (states.ON,self.statusstr)
-                    else :
-                        self._state = (states.OFF,self.statusstr)
-                    print(self._state)
+                    CC2xlib.globals.CRATE._state = (CC2xlib.globals.CRATE._state[0],"FINISHED:"+toapply)
+                    self._state = copy.deepcopy(CC2xlib.globals.CRATE._state)
+                    print(CC2xlib.globals.CRATE._state)
                 CC2xlib.globals.CRATE.lock.release()
                 return

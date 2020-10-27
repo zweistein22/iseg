@@ -28,53 +28,9 @@ from entangle.core import states
 from entangle.device.iseg import CC2xlib
 from entangle.device.iseg.CC2xlib import json_data
 from entangle.device.iseg.CC2xlib import CC2xjsonhandling
-
+from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
 
 port = '8080'
-
-
-
-
-class HardLimits:
-    unitTime = 'ms'
-    unitCurrent = 'µA'
-    maxTripCurrent = 5
-    maxVoltage = 2200
-
-    @staticmethod
-    def checkmovelimitsandbugfix(rol):
-        cmds = ["Control.voltageSet","Control.currentSet","Setup.delayedTripTime"]
-        limits = [HardLimits.maxVoltage, HardLimits.maxTripCurrent,0]
-        units = ['',HardLimits.unitCurrent,HardLimits.unitTime]
-        #units is a bug fix for iges ics
-        limitsmoved = 0
-        wheremoved = ''
-        for ro in rol:
-            if ro['c'] == "setItem":
-                item = ro['p']
-                if not 'i' in item:
-                    continue
-                ourcmd = item['i']
-                if ourcmd in cmds:
-                    i = cmds.index( ourcmd)
-                    v = item['v']
-                    sign = 1
-                    if v < 0:
-                        sign = -1
-                    if limits[i]:
-                        if abs(v) > limits[i]:
-                            item['v'] = sign * limits[i]
-                            limitsmoved = 1
-                            wheremoved = wheremoved + ", " + ourcmd + str(item['v'])
-                    if units[i]:
-                        item['u'] = units[i]
-
-        return (limitsmoved,wheremoved)
-
-print("HardLimits.unitTime="+str(HardLimits.unitTime))
-print("HardLimits.unitCurrent="+str(HardLimits.unitCurrent))
-print("HardLimits.maxTripCurrent="+str(HardLimits.maxTripCurrent))
-print("HardLimits.maxVoltage="+str(HardLimits.maxVoltage))
 
 class CRATE:
     instances = []
@@ -114,7 +70,9 @@ async def heartbeat(connection):
             #print("heartbeat!!!")
             await connection.send(r)
         except websockets.exceptions.ConnectionClosed:
+            CRATE.lock.acquire()
             CRATE._state = (states.FAULT, 'Connection with server closed.')
+            CRATE.lock.release()
             print(CRATE._state[1])
             break
         except Exception as inst:
@@ -170,7 +128,7 @@ async def listen(connection):
 
                 if "t" in adict:
                     #if adict["t"] == "info":
-                        #print(adict)
+                       # print(adict)
 
                     #if adict["t"] == "response":
                     #    print(adict)
@@ -191,7 +149,7 @@ async def listen(connection):
                                 command = c["d"]["i"]
                                 if not ( command in ["Status.voltageTerminalMeasure", \
                                                         "Status.heartBeat","System.time","Status.temperature0", \
-                                                        "Status.temperature1", "Status.currentMeasure" , "Status.voltageMeasure"]):
+                                                        "Status.temperature1", "Status.currentMeasure"]):  #    , "Status.voltageMeasure"]):
                                     #print(c["d"])
                                     pass
                                 if command in ["Status.inputError"]:
@@ -212,7 +170,7 @@ async def listen(connection):
                                     break
 
                                 if lac == CRATE.always_monitored[1]:
-                                    maxconnections = 2
+                                    maxconnections = 3
                                     #NOT SURE : BUG in iseg module, will report disconnected clients only with a delay
                                     #doing several Reset() within short time the number of connected clients will temporarily increase
                                     if (command == "Status.connectedClients" and int(value) > maxconnections):
@@ -231,7 +189,19 @@ async def listen(connection):
                                 CRATE.lock.release()
 
                                 if lac == CRATE.always_monitored[0]:
+                                    if command == "Status.power":
+                                        CRATE.lock.acquire()
+                                        if  value == '0':
+                                            CRATE.poweron = False
+                                            CRATE._state = (states.OFF,CRATE._state[1])
+                                            for inst in CRATE.instances: # all clients are also off then
+                                                inst._state = (CRATE._state[0], inst._state[1])
+                                        else :
+                                            CRATE.poweron = True
 
+
+                                            # we set _state only in isAlive delayed thread
+                                        CRATE.lock.release()
                                     if command == "Status.isAlive":
                                         rol = []
                                         CRATE.lock.acquire()
@@ -241,33 +211,16 @@ async def listen(connection):
                                         else :
                                             print("Status.isAlive == 1")
                                             rol.append( CC2xlib.json_data.make_requestobject("getItem",CC2xlib.globals.CRATE.always_monitored[0],"Status.power"))
-                                            for inst in CRATE.instances:
-                                                instrol = inst.rolisAlive()
-                                                rv, msg =  HardLimits.checkmovelimitsandbugfix(instrol)
-                                                if rv:
-                                                    inst._state  =(inst._state[0], msg +inst._state[1])
-                                                rol.extend(instrol)
-                                        CRATE.lock.release()
-                                        t = threading.Thread(target=queue_request_delayed_setstate, args=(rol,12))
-                                        t.start()
-
-                                    if command == "Status.power":
-                                        CRATE.lock.acquire()
-                                        if  value == '0':
-                                            CRATE.poweron = False
-                                            CRATE._state = (states.OFF,CRATE._state[1])
+                                            CRATE._state = (states.INIT,command)
                                             for inst in CRATE.instances:
                                                 inst._state = copy.deepcopy(CRATE._state)
-                                        else :
-                                            CRATE.poweron = True
-
-
-                                            # we set _state only in isAlive delayed thread
                                         CRATE.lock.release()
+                                        t = threading.Thread(target=queue_request_delayed_setstate, args=(rol,15))
+                                        t.start()
+
+
+
                                     continue
-
-
-
                                 CRATE.lock.acquire()
                                 for inst in CRATE.instances:
                                     if inst.waitstring :
@@ -331,25 +284,40 @@ async def listen(connection):
                                     if int(value):  # for these commands we know that value can be converted to int
                                         CRATE.lock.acquire()
                                         print("\r\n")
-                                        print(lac + " : "+ command)
+                                        alarmmsg = lac + " : "+ command
+                                        print(alarmmsg)
                                         print("\r\n")
-                                        CRATE._state = (states.ALARM,lac + " : "+ command)
+                                        if lac in CRATE.itemUpdated:
+                                            ouritems = CRATE.itemUpdated[lac]
+                                            if 'Status.currentMeasure' in ouritems:
+                                                vu2 = ouritems['Status.currentMeasure']
+                                                if 'v' in vu2:
+                                                    v = vu2['v']
+                                                    alarmmsg += " "
+                                                    alarmmsg += str(v)
+                                                if 'u' in vu2:
+                                                    u = vu2['u']
+                                                    alarmmsg += str(u)
+
+                                        CRATE._state = (states.ALARM,alarmmsg)
                                         rol = []
                                         for inst in CRATE.instances:
                                             if lac in inst.channels_handled:
-                                                inst._state = copy.deepcopy(CRATE._state)
+                                                #inst._state = copy.deepcopy(CRATE._state)
                                                 if inst.waitstring:
                                                     inst._state  =(CRATE._state[0], CRATE._state[1] + " => "+"CANCELLED: "+inst.waitstring)
                                                     inst.waitstring = ''
                                                     inst.waitstringmintime = ''
                                                 #print(inst._state)
-                                                for ch in inst.channels_handled:
-                                                    if CC2xjsonhandling.isModuleAddress(ch):
-                                                        # we switch off all handled modules
-                                                        rol.append( CC2xlib.json_data.make_requestobject("setItem",ch,"Control.on", '0'))
+                                                if HardLimits.tripEventAllModulesOff:
+                                                    for ch in inst.channels_handled:
+                                                        if CC2xjsonhandling.isModuleAddress(ch):
+                                                            # we switch off all handled modules
+                                                            rol.append( CC2xlib.json_data.make_requestobject("setItem",ch,"Control.on", '0'))
                                         CRATE.lock.release()
-                                        t = threading.Thread(target=queue_request, args=(rol,))
-                                        t.start()
+                                        if len(rol):
+                                            t = threading.Thread(target=queue_request, args=(rol,))
+                                            t.start()
                                         #queue_request(rol) # deadlocks ! can be used directly only from other thread.
 
         except Exception as inst:
@@ -382,12 +350,11 @@ async def logout():
     else:
         CRATE._state =(states.OFF,"DISCONNECTED")
 
-    CRATE._state =(states.UNKNOWN,"DISCONNECTED")
     CRATE.lock.acquire()
     for inst in CRATE.instances:
-        inst._state = copy.deepcopy(CRATE._state)
+        inst._state = (inst._state[0], "DISCONNECTED:"+inst._state[1])
     CRATE.lock.release()
-    print(CRATE._state)
+    print("CRATE:" + str(CRATE._state))
 
 async def login(address,user,password):
     timeout = 5
@@ -406,7 +373,7 @@ async def login(address,user,password):
         CRATE._state =(CRATE._state[0],"CONNECTED : "+CRATE.sessionid)
 
         for inst in CRATE.instances:
-            inst._state = copy.deepcopy(CRATE._state)
+            inst._state = (inst._state[0], inst._state[1] +" "+ CRATE._state[1])
         CRATE.lock.release()
 
 
@@ -416,7 +383,7 @@ async def login(address,user,password):
         CRATE._state = (states.FAULT,"Connection timeout")
         print(CRATE._state)
         for inst in  CRATE.instances:
-            inst._state = copy.deepcopy(CRATE._state)
+            inst._state = copy.deepcopy(CRATE._state)  # here we overwrite the instance State
 
         CRATE.lock.release()
 
@@ -516,11 +483,11 @@ def power(value: bool) -> None:
     #print("power("+str(int(value))+")")
     rol = []
     if int(value):
-        rol.append( CC2xlib.json_data.make_requestobject("getItem",CRATE.always_monitored[0],"Status.isAlive"))
         CRATE.lock.acquire()
         for inst in CRATE.instances:
             inst._state = (states.INIT,CRATE._state[1])
         CRATE.lock.release()
+        rol.append( CC2xlib.json_data.make_requestobject("getItem",CRATE.always_monitored[0],"Status.isAlive"))
 
     rol.append( CC2xlib.json_data.make_requestobject("setItem",CRATE.always_monitored[0],"Control.power",str(int(value))))
 
@@ -549,9 +516,9 @@ def monitor(address,user,password):
     CRATE.loop.run_until_complete(getConfig())
 
     try :
-        #future1 = asyncio.ensure_future(heartbeat(websocket))
+        #future1 = asyncio.ensure_future(heartbeat(CRATE.websocket))
         future2 = asyncio.ensure_future(listen(CRATE.websocket))
-        #loop.run_until_complete(asyncio.gather(future1,future2))
+        #CRATE.loop.run_until_complete(asyncio.gather(future1,future2))
         CRATE.loop.run_until_complete(asyncio.gather(future2))
 
     except:
@@ -595,27 +562,56 @@ def add_monitor(ipaddress,user,password):
     t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
     t.start()
     power(True)
-    #t2 = threading.Thread(target=delayed_power, args=(True,))
+    #t2 = threading.Thread(target=power_after_init, args=(True,))
     #t2.start()
     return
 
-#def delayed_power(poweron):
-#    time.sleep(15)
-#    power(poweron)
+def power_after_init(poweron):
+    power(poweron) # triggers Status.isAlive response
+    for i in range(0,20):
+        time.sleep(1)
+        canbreak = True
+        CRATE.lock.acquire()
+        if  CRATE._state[0] == states.INIT:
+            canbreak = False
+        if CRATE._state[0] == states.UNKNOWN:
+            canbreak = False
+        CRATE.lock.release()
+        if canbreak:
+            break
+    if not canbreak:
+        print("power_after_init , ERROR: state.INIT")
+
+    if int(poweron):
+         rol = []
+         rol.append( CC2xlib.json_data.make_requestobject("setItem",CRATE.always_monitored[0],"Control.power",str(int(poweron))))
+        # rol.append( CC2xlib.json_data.make_requestobject("getItem",CRATE.always_monitored[0],"Status.power"))
+         queue_request(rol)
+
 
 
 def queue_request_delayed_setstate(rol,delay):
     time.sleep(delay)
+    print(str(delay) + " seconds delayed")
+    CRATE.lock.acquire()
+    for inst in CRATE.instances:
+        instrol = inst.rolisAlive()
+        rv, msg =  HardLimits.checkmovelimitsandbugfix(instrol)
+        if rv:
+            inst._state  =(inst._state[0], msg +inst._state[1])
+        rol.extend(instrol)
+    CRATE.lock.release()
     queue_request(rol)
+    time.sleep(1) # must yield before lock
     CRATE.lock.acquire()
     if CRATE.poweron:
-        CRATE._state = (states.ON,CRATE._state[1])
+        CRATE._state = (states.ON, "CONNECTED : "+CC2xlib.globals.CRATE.sessionid)
         print("Power is On")
     else:
-        CRATE._state = (states.OFF,CRATE._state[1])
+        CRATE._state = (states.OFF, "CONNECTED : "+CC2xlib.globals.CRATE.sessionid)
         print("Power is Off")
-    for inst in CRATE.instances:
-        inst._state = copy.deepcopy(CRATE._state)
+    #for inst in CRATE.instances:
+    #    inst._state = copy.deepcopy(CRATE._state)
     CRATE.lock.release()
 
 def queue_request(rol):

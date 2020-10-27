@@ -12,6 +12,7 @@ import CC2xlib.globals
 import CC2xlib.json_data
 import CC2xlib.CC2xjsonhandling
 import CC2x
+import isegCC2xChannel
 
 
 operatingstyle="""
@@ -29,17 +30,36 @@ for style in jos:
     v = jos[style]
     print(v)
 
-class PowerSupply(CC2x.IntelligentPowerSupply):
+respath = 'CC2xlib/example/iseg-Channel_0_1_6.res'
+#respath = 'CC2xlib/example/HV-TEST.res'
+
+
+class PowerSupply(isegCC2xChannel.PowerSupply):
+    _props = {}
+    #log = logging.getLogger()
+    def __init__(self,logger=None):
+        with open(respath) as fd:
+            data = toml.load(fd)
+            tango_name = 'test/Erwin/HV-Powersupply-Channel016'
+            self.address = data[tango_name]['address']
+            self.user = data[tango_name]['user']
+            self.password = data[tango_name]['password']
+            self.channel = data[tango_name]['channel']
+            if 'operatingstyle' in data[tango_name]:
+                self.operatingstyle = data[tango_name]['operatingstyle']
+        self._state = (states.INIT,self.address)
+        self.init()
+
+class IntelligentPowerSupply(CC2x.IntelligentPowerSupply):
 
     _props = {}
     #log = logging.getLogger()
     def __init__(self,logger=None):
         #super(CC2x.IntelligentPowerSupply, self).__init__(log)
 
-        #with open('CC2xlib/example/iseg-Channel_0_0_0.res') as fd:
-        with open('CC2xlib/example/HV-TEST.res') as fd:
+        with open(respath) as fd:
             data = toml.load(fd)
-            tango_name = 'test/Erwin/HV-Powersupply'
+            tango_name = 'test/Erwin/HV-Powersupply-ModulesSetting'
             self.address = data[tango_name]['address']
             self.user = data[tango_name]['user']
             self.password = data[tango_name]['password']
@@ -49,6 +69,8 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
                 self.groups = data[tango_name]['groups']
             if 'operatingstyles' in data[tango_name]:
                 self.operatingstyles = data[tango_name]['operatingstyles']
+            if 'tripeventallmodulesoff' in data[tango_name]:
+                self.tripeventallmodulesoff = data[tango_name]['tripeventallmodulesoff']
         self._state = (states.INIT,self.address)
         self.init()
 
@@ -74,18 +96,30 @@ class PowerSupply(CC2x.IntelligentPowerSupply):
             j = j + 1
         return rol
 
-
-
-
-
-a = PowerSupply()
+a = IntelligentPowerSupply()
 while True:
   time.sleep(1)
-  st = a._state
-
   st2 = a.state()
-  if st[0] != states.INIT:
+  if st2[0] != states.INIT:
       break
+
+
+for i in range(0,25):
+    time.sleep(1)
+    print(a.state())
+
+b = PowerSupply()
+time.sleep(1)
+b.Off()
+time.sleep(1)
+b.On()
+time.sleep(1)
+for i in range(0,20):
+      z = b.state()
+      print(z)
+      time.sleep(1)
+
+
 
 n_items = a.read_availableLines()
 

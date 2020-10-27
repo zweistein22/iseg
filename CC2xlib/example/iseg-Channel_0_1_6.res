@@ -7,6 +7,7 @@ absmin = 0
 absmax = 0
 transitions = ''
 operatingstyles = ''
+tripeventallmodulesoff = 1
 
 groups="""
 {
@@ -20,14 +21,14 @@ groups="""
 #Control.voltageRampspeed is in % of Nominal Voltage (is 3000V with current device)
 
 
-["test/Erwin/HV-Powersupply-ChannelLeftTop"]
+["test/Erwin/HV-Powersupply-Channel016"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
-channel = '0_0_0'
+channel = '0_1_6'
 operatingstyle="""
 {
     "Control.currentSet" : 1.0,
