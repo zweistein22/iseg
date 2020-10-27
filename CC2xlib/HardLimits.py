@@ -39,7 +39,7 @@ class HardLimits:
                         if abs(v) > limits[i]:
                             item['v'] = str(sign * limits[i])
                             limitsmoved = 1
-                            wheremoved = wheremoved + ", " + ourcmd  + " CHANGED:" + str(item['v'])
+                            wheremoved = wheremoved + ", " + ourcmd  + " CHANGED: ("+str(v)+"=>" + str(item['v']+")")
                     if units[i]:
                         item['u'] = units[i]
 

@@ -145,7 +145,8 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         rv, msg =  CC2xlib.globals.HardLimits.checkmovelimitsandbugfix(rol)
         if rv:
             CC2xlib.globals.CRATE.lock.acquire()
-            self._state  =(self._state[0], msg +self._state[1])
+            #self._state  =(self._state[0], msg +self._state[1]) no change of _state[1] as waitstring
+            print(msg +self._state[1])
             CC2xlib.globals.CRATE.lock.release()
         CC2xlib.globals.queue_request(rol)
 

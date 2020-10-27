@@ -42,7 +42,7 @@ class PowerSupply(base.PowerSupply):
         tu1 = tuple(daw)
         tu.disallowed_write = tu1
         #idea: put this in __init__
-        # probably attribute is read in before by deviceworker -> check if time permitting.
+        # probably attribute is read in before by deviceworker -> todo: check if time permitting.
         #end
         CC2xlib.globals.CRATE.lock.acquire()
         CC2xlib.globals.CRATE.instances.append(self)
@@ -155,12 +155,19 @@ class PowerSupply(base.PowerSupply):
                         self._state = (states.ON, self._state[1])
                     if str(v) == '0':
                         self._state = (states.OFF, self._state[1])
-                if item == 'Status.ramping':
-                     if str(v) == '1':
-                        self._state = (states.BUSY, self._state[1])
                 if item == 'Event.currentTrip':
                     if str(v) == '1':
                          self._state = (states.ALARM,CC2xlib.globals.CRATE._state[1])
+
+            if 'Status.ramping' in ouritems: # effectively ovveriding previous choice
+                vu = ouritems['Status.ramping']
+                if 'v' in vu:
+                    v = vu['v']
+                    if str(v) == '1':
+                            self._state = (states.BUSY, self._state[1])
+
+
+
 
         if CC2xlib.globals.CRATE._state[0] in [states.INIT, states.UNKNOWN]:
             self._state = (self._state[0], "Wait...")
