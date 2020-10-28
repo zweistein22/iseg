@@ -3,7 +3,7 @@ type = "iseg.CC2x.IntelligentPowerSupply"
 address = '172.25.25.56'
 user = 'admin'
 password = 'password'
-absmin = 0 
+absmin = 0
 absmax = 0
 tripeventallmodulesoff = 0
 

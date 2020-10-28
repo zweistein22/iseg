@@ -74,14 +74,15 @@ class PowerSupply(base.PowerSupply):
     def On(self):
         print("on")
         rol = []
-        #instrol = self.rolisAlive()
-        #rv, msg =  CC2xlib.globals.HardLimits.checkmovelimitsandbugfix(instrol)
-        #if rv:
-        #     self._state  =(self._state[0], msg +self._state[1])
-        #rol.extend(instrol)
+        self._state = (states.ON, '')
+        instrol = self.rolisAlive()
+        rv, msg =  CC2xlib.globals.HardLimits.checkmovelimitsandbugfix(instrol)
+        if rv:
+             self._state  =(self._state[0], msg +self._state[1])
+        rol.extend(instrol)
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.on",1))
         CC2xlib.globals.queue_request(rol)
-        self._state = (self._state[0], '')
+
 
 
     def Off(self):
