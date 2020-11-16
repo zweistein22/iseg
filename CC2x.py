@@ -35,17 +35,22 @@ class CmdProcessor(object):
         return -1
 
     def Write(self, msg:str)->uint32:
-        self.lastcmd = msg
+        self.lastcmd = msg.rstrip()
+        print('CmdProcessor.Write('+self.lastcmd + ')')
         ourcmds = ['APPLY:']
         for cmd in ourcmds:
-            if msg.startswith(cmd):
+            if self.lastcmd.startswith(cmd):
                 if cmd == ourcmds[0]:
                     n_ = len(cmd)
                     tr = self.lastcmd[n_:]
                     self.applyTransition(tr)
         return len(msg)
 
+    #def Read(self, n=0):
+        # this returns always the current statuss
+    #    return self._state[1]
     def ReadLine(self):
+        print('CmdProcessor.ReadLine() lastcmd == ' + self.lastcmd)
         if not self.lastcmd:
             return ''
         if self.lastcmd == '?':
@@ -195,7 +200,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
 
 
     def delete(self):
-        print("CC2x.delete")
+        #print("CC2x.delete")
         n_instances = 0
         CC2xlib.globals.CRATE.lock.acquire()
         for i in CC2xlib.globals.CRATE.instances:
@@ -331,7 +336,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
             if toapply in tr:
                 workqueue = tr[toapply]
                 changemsg = ''
-                for nextjob in workqueue:
+                for nextjob in workqueue: # here just a HardLimits parameter check and adjust
                     for item in nextjob:
                         if str(item) == 'GROUP' :
                             continue
@@ -346,7 +351,6 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                     rol = []
                                     rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,values[j]))
                                     rv, msg = HardLimits.checkmovelimitsandbugfix(rol)
-                                    # here just a HardLimits parameter check and adjust
                                     if rv:
                                         if changemsg:
                                             changemsg += ", "
@@ -437,7 +441,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                         if not waitforanswer:
                             CC2xlib.globals.CRATE.lock.acquire()
                             self.waitstring = ''
-                            time.sleep(2)  # needed to avoid  crate firmware sloppyness (Status.ramping:1 comes only after litte delay)
+                            time.sleep(2)  # needed to avoid  crate firmware sloppyness (Status.ramping 1 comes only after litte delay)
                             CC2xlib.globals.CRATE.lock.release()
 
                         rrlen = 1

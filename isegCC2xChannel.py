@@ -28,7 +28,7 @@ class PowerSupply(base.PowerSupply):
     }
 
     def init(self):
-        print("isegCC2cChannel.PowerSupply.init")
+        #print("isegCC2cChannel.PowerSupply.init")
         self.mode = 'voltage'
         self._state = (states.INIT,self.address)
         self.channels_handled = [self.channel]
@@ -51,7 +51,7 @@ class PowerSupply(base.PowerSupply):
 
     def rolisAlive(self):
         # this function is called once the crate is alive (= can accept parameters)
-        rol = [] # request object list -> rol
+        rol = []
         print("isegCC2cChannel.PowerSupply.rolisAlive")
         jos = json.loads(self.operatingstyle)
         for item in jos:
@@ -72,21 +72,20 @@ class PowerSupply(base.PowerSupply):
             CC2xlib.globals.reset()
 
     def On(self):
-        print("on")
+        #print("on")
         rol = []
-        self._state = (states.ON, '')
-        instrol = self.rolisAlive()
-        rv, msg =  CC2xlib.globals.HardLimits.checkmovelimitsandbugfix(instrol)
-        if rv:
-             self._state  =(self._state[0], msg +self._state[1])
-        rol.extend(instrol)
+        #instrol = self.rolisAlive()
+        #rv, msg =  CC2xlib.globals.HardLimits.checkmovelimitsandbugfix(instrol)
+        #if rv:
+        #     self._state  =(self._state[0], msg +self._state[1])
+        #rol.extend(instrol)
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.on",1))
         CC2xlib.globals.queue_request(rol)
-
+        self._state = (self._state[0], '')
 
 
     def Off(self):
-        print("off")
+        #print("off")
         rol = []
         rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.on",0))
         CC2xlib.globals.queue_request(rol)
