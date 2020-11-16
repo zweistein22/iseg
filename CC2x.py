@@ -48,6 +48,8 @@ class CmdProcessor(object):
     def ReadLine(self):
         if not self.lastcmd:
             return ''
+        if self.lastcmd == '?':
+            return self._state[1]
         tmp = self.lastcmd.rstrip()
         cmd = 'TR'
         index = tmp.find(cmd)
@@ -329,7 +331,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
             if toapply in tr:
                 workqueue = tr[toapply]
                 changemsg = ''
-                for nextjob in workqueue: # here just a HardLimits parameter check and adjust
+                for nextjob in workqueue:
                     for item in nextjob:
                         if str(item) == 'GROUP' :
                             continue
@@ -344,6 +346,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                     rol = []
                                     rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,values[j]))
                                     rv, msg = HardLimits.checkmovelimitsandbugfix(rol)
+                                    # here just a HardLimits parameter check and adjust
                                     if rv:
                                         if changemsg:
                                             changemsg += ", "
@@ -434,7 +437,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                         if not waitforanswer:
                             CC2xlib.globals.CRATE.lock.acquire()
                             self.waitstring = ''
-                            time.sleep(2)  # needed to avoid  crate firmware sloppyness (Status.ramping 1 comes only after litte delay)
+                            time.sleep(2)  # needed to avoid  crate firmware sloppyness (Status.ramping:1 comes only after litte delay)
                             CC2xlib.globals.CRATE.lock.release()
 
                         rrlen = 1

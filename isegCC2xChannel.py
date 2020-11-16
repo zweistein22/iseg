@@ -51,7 +51,7 @@ class PowerSupply(base.PowerSupply):
 
     def rolisAlive(self):
         # this function is called once the crate is alive (= can accept parameters)
-        rol = []
+        rol = [] # request object list -> rol
         print("isegCC2cChannel.PowerSupply.rolisAlive")
         jos = json.loads(self.operatingstyle)
         for item in jos:

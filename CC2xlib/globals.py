@@ -43,6 +43,7 @@ class CRATE:
     _state = (states.UNKNOWN,"uninitialized")
     poweron = False
     loop = None
+    mt = None
 
 def StatusJson(channellist)->str:
     rv = ''
@@ -320,10 +321,16 @@ async def listen(connection):
                                             t.start()
                                         #queue_request(rol) # deadlocks ! can be used directly only from other thread.
 
-        except Exception as inst:
-            print(type(inst))    # the exception instance
-            print(inst.args)     # arguments stored in .args
-            print(inst)          # __str__ allows args to be printed directly,
+        except Exception as e:
+            print(type(e))    # the exception instance
+            print(e.args)     # arguments stored in .args
+            print(e)          # __str__ allows args to be printed directly,
+            CRATE.lock.acquire()
+            CRATE._state = (states.FAULT,str(e))
+            for inst in CRATE.instances:
+                inst._state = (states.FAULT,str(e))
+            CRATE.lock.release()
+
             break
     CRATE.lock.acquire()
     CRATE.websocket = None
@@ -342,19 +349,23 @@ async def logout():
         cmd = CC2xlib.json_data.logout(CRATE.sessionid)
         await CRATE.websocket.send(cmd)
         await CRATE.websocket.close()
-        CRATE.websocket = None
+        if CRATE.poweron:
+            CRATE._state =(states.ON,"DISCONNECTED")
+        else:
+            CRATE._state =(states.OFF,"DISCONNECTED")
+        CRATE.lock.acquire()
+        for inst in CRATE.instances:
+            inst._state = (inst._state[0], "DISCONNECTED:"+inst._state[1])
+        CRATE.lock.release()
     except:
-        pass
-    if CRATE.poweron:
-        CRATE._state =(states.ON,"DISCONNECTED")
-    else:
-        CRATE._state =(states.OFF,"DISCONNECTED")
-
+        CRATE.lock.acquire()
+        CRATE._state = (states.FAULT, CRATE._state[1])
+        CRATE.lock.release()
+    CRATE.websocket = None
     CRATE.lock.acquire()
-    for inst in CRATE.instances:
-        inst._state = (inst._state[0], "DISCONNECTED:"+inst._state[1])
+    CRATE.sessionid = ''
     CRATE.lock.release()
-    print("CRATE:" + str(CRATE._state))
+    print("logout()  CRATE:" + str(CRATE._state))
 
 async def login(address,user,password):
     timeout = 5
@@ -370,10 +381,11 @@ async def login(address,user,password):
         adict = json.loads(response)
         CRATE.lock.acquire()
         CRATE.sessionid = adict["i"]
-        CRATE._state =(CRATE._state[0],"CONNECTED : "+CRATE.sessionid)
-
+        #CRATE._state =(CRATE._state[0],"CONNECTED : "+CRATE.sessionid)
+        CRATE._state =(states.UNKNOWN,"CONNECTED : "+CRATE.sessionid)
         for inst in CRATE.instances:
-            inst._state = (inst._state[0], inst._state[1] +" "+ CRATE._state[1])
+            inst._state = copy.deepcopy(CRATE._state)  # here we overwrite the instance State
+            #inst._state = (inst._state[0], inst._state[1] +" "+ CRATE._state[1])
         CRATE.lock.release()
 
 
@@ -431,7 +443,9 @@ future2 = None
 
 def reset():
     global future1,future2
+    print("reset()")
     if CRATE._state == states.UNKNOWN:
+        print("reset(), states.UNKNOWN")
         return
     if CRATE.websocket and CRATE.loop:
         future = asyncio.run_coroutine_threadsafe(logout(), CRATE.loop)
@@ -480,7 +494,7 @@ def reset():
 
 
 def power(value: bool) -> None:
-    #print("power("+str(int(value))+")")
+    print("power("+str(int(value))+")")
     rol = []
     if int(value):
         CRATE.lock.acquire()
@@ -498,6 +512,7 @@ def monitor(address,user,password):
     asyncio.set_event_loop(CRATE.loop)
     #ping.ping(address)
     CRATE.loop.run_until_complete(login(address,user,password))
+    #print("monitor() login done")
     tmpstate = (states.UNKNOWN)
     CRATE.lock.acquire()
     tmpstate = CRATE._state
@@ -508,27 +523,33 @@ def monitor(address,user,password):
             connected = True
 
     if not connected:
-        return
-    CRATE.lock.acquire()
-    monitored.append(address)
-    CRATE.lock.release()
-    CRATE.loop.run_until_complete(getItemsInfo(address))
-    CRATE.loop.run_until_complete(getConfig())
+        print("monitor() not connected -> return")
 
-    try :
-        #future1 = asyncio.ensure_future(heartbeat(CRATE.websocket))
-        future2 = asyncio.ensure_future(listen(CRATE.websocket))
-        #CRATE.loop.run_until_complete(asyncio.gather(future1,future2))
-        CRATE.loop.run_until_complete(asyncio.gather(future2))
+    if connected:
+        CRATE.lock.acquire()
+        monitored.append(address)
+        CRATE.lock.release()
+        CRATE.loop.run_until_complete(getItemsInfo(address))
+        CRATE.loop.run_until_complete(getConfig())
+        t = threading.Thread(target=powerdelayed, args=(True,1.5,))
+        t.start()
+        try :
+            #future1 = asyncio.ensure_future(heartbeat(CRATE.websocket))
+            future2 = asyncio.ensure_future(listen(CRATE.websocket))
+            #CRATE.loop.run_until_complete(asyncio.gather(future1,future2))
+            CRATE.loop.run_until_complete(asyncio.gather(future2))
+        except:
+            pass
+        if CRATE.sessionid: # better with locks, but who cares at exit of monitoring loop
+            CRATE.loop.run_until_complete(logout())
+        CRATE.lock.acquire()
+        monitored.remove(address)
+        CRATE.lock.release()
 
-    except:
-        pass
-    CRATE.loop.run_until_complete(logout())
     CRATE.lock.acquire()
-    monitored.remove(address)
+    CRATE.mt = None
     #monitored = []
     #itemUpdated = {}
-    CRATE.sessionid = ''
     CRATE.lock.release()
     future1 = None
     future2 = None
@@ -536,15 +557,21 @@ def monitor(address,user,password):
     print("monitor() exiting..")
     return
 
+def powerdelayed(value:bool, delay):
+    time.sleep(delay)
+    power(value)
+
+
 def add_monitor(ipaddress,user,password):
     alreadyrunning = False
     lmon = 0
     CRATE.lock.acquire()
     lmon = len(monitored)
-    if ipaddress in monitored:
+    if CRATE.mt:
         alreadyrunning = True
     CRATE.lock.release()
     if alreadyrunning:
+        #print("add_monitor() monitor already running")
         CRATE.lock.acquire()
         for inst in CRATE.instances:
             if inst._state[0] == states.INIT:
@@ -557,11 +584,13 @@ def add_monitor(ipaddress,user,password):
         return
     if lmon :
         raise Exception("Unsupported: multiple ip addresses")
+    print("add_monitor() starting monitor thread")
     CRATE.loop = asyncio.new_event_loop()
-
     t = threading.Thread(target=monitor, args=(ipaddress,user,password,))
+    CRATE.lock.acquire()
+    CRATE.mt = t
+    CRATE.lock.release()
     t.start()
-    power(True)
     return
 
 def queue_request_delayed_setstate(rol,delay):
@@ -576,16 +605,16 @@ def queue_request_delayed_setstate(rol,delay):
         rol.extend(instrol)
     CRATE.lock.release()
     queue_request(rol)
-    time.sleep(1) # must yield before lock
+    time.sleep(1.5) # must yield before lock
     CRATE.lock.acquire()
     if CRATE.poweron:
-        CRATE._state = (states.ON, "CONNECTED : "+CC2xlib.globals.CRATE.sessionid)
+        CRATE._state = (states.ON, "CONNECTED : "+CC2xlib.globals.CRATE.sessionid + " "+msg)
         print("Power is On")
     else:
-        CRATE._state = (states.OFF, "CONNECTED : "+CC2xlib.globals.CRATE.sessionid)
+        CRATE._state = (states.OFF, "CONNECTED : "+CC2xlib.globals.CRATE.sessionid +" " +msg)
         print("Power is Off")
-    #for inst in CRATE.instances:
-    #    inst._state = copy.deepcopy(CRATE._state)
+    for inst in CRATE.instances:
+        inst._state = copy.deepcopy(CRATE._state)
     CRATE.lock.release()
 
 def queue_request(rol):
@@ -597,9 +626,11 @@ def queue_request(rol):
     if  ctrlcreceived:
         return result
     if not CRATE.loop:
+        print("CRATE.loop == None")
         return result
     sid =''
     tmpstate = (states.UNKNOWN)
+    i = 0
     while sid == '':
         CRATE.lock.acquire()
         tmpstate = copy.deepcopy(CRATE._state)
@@ -609,6 +640,10 @@ def queue_request(rol):
             return result# no action
         if sid == '':
             time.sleep(1)
+            i = i + 1
+            if i > 5:
+              print("queue_request() sid=='' after 5 seconds -> return")
+              return result
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), CRATE.loop)
     timeout = 15
     try :
