@@ -361,6 +361,15 @@ async def login(address,user,password):
             #inst._state = (inst._state[0], inst._state[1] +" "+ CRATE._state[1])
         CRATE.lock.release()
 
+    except OSError as oserr:
+        CRATE.lock.acquire()
+        CRATE.websocket = None
+        CRATE._state = (states.FAULT,str(oserr))
+        print(CRATE._state)
+        for inst in  CRATE.instances:
+            inst._state = copy.deepcopy(CRATE._state)  # here we overwrite the instance State
+
+        CRATE.lock.release()
 
     except  ConnectionTimeoutError:
         CRATE.lock.acquire()
@@ -519,7 +528,7 @@ def monitor(address,user,password):
     CRATE.lock.release()
     future2 = None
     CRATE.loop = None
-    print("monitor() exit... reset needed to restart")
+    print("monitor() exit... reset needed to reconnect")
     return
 
 def powerdelayed(value:bool, delay):
