@@ -64,7 +64,7 @@ class CmdProcessor(object):
         tr_names =  self.getTransitionNames()
         if not tr_names:
             return ''
-        if len(tr_names) < itr:
+        if len(tr_names) <= itr:
             return ''
         return tr_names[itr]
 
