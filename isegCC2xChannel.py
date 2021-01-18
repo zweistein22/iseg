@@ -12,7 +12,7 @@ from entangle import base
 from entangle.core import states , Prop, Attr
 from  entangle.device.iseg import CC2xlib
 import entangle.device.iseg.CC2xlib.globals
-#from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
+from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
 
 class PowerSupply(base.PowerSupply):
     properties = {
@@ -122,9 +122,9 @@ class PowerSupply(base.PowerSupply):
 
     def write_current(self, value):
         if self.mode == 'current':
-           rol = []
-           rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.currentSet",str(value)))
-           CC2xlib.globals.queue_request(rol)
+            rol = []
+            rol.append(CC2xlib.json_data.make_requestobject("setItem",self.channel,"Control.currentSet",str(value)))
+            CC2xlib.globals.queue_request(rol)
 
 
     def read_jsonstatus(self):
@@ -157,14 +157,14 @@ class PowerSupply(base.PowerSupply):
                         self._state = (states.OFF, self._state[1])
                 if item == 'Event.currentTrip':
                     if str(v) == '1':
-                         self._state = (states.ALARM,CC2xlib.globals.CRATE._state[1])
+                        self._state = (states.ALARM,CC2xlib.globals.CRATE._state[1])
 
             if 'Status.ramping' in ouritems: # effectively ovveriding previous choice
                 vu = ouritems['Status.ramping']
                 if 'v' in vu:
                     v = vu['v']
                     if str(v) == '1':
-                            self._state = (states.BUSY, self._state[1])
+                        self._state = (states.BUSY, self._state[1])
 
 
 

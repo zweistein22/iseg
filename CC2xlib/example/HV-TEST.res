@@ -24,6 +24,8 @@ transitions="""
 ]
 }
 """
+#Control.voltageRampspeed is in % of Nominal Voltage (is 3000V with current device)
+# so 0.1666 is 5V/s
 
 groups="""
 {

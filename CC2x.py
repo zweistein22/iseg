@@ -21,7 +21,7 @@ from entangle.device.iseg import CC2xlib
 #import entangle.device.iseg.CC2xlib.globals
 #import entangle.device.iseg.CC2xlib.json_data
 #import entangle.device.iseg.CC2xlib.CC2xjsonhandling
-#from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
+from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
 
 class CmdProcessor(object):
     lastcmd = ''
@@ -71,7 +71,9 @@ class CmdProcessor(object):
 
 
 class IntelligentPowerSupply(CmdProcessor,base.StringIO):
-    """Controls an Iseg CC2x high-voltage power supply via websocket."""
+    """Controls an Iseg CC2x high-voltage power supply via websocket.
+       Iseg CC2x accepts command via the entangle StringIO interface
+    """
 
     commands = {
         'setVoltage':
@@ -301,6 +303,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     def get_jsonstatus_unit(self):
         return ''
     def state(self):
+
         CC2xlib.globals.CRATE.lock.acquire()
         if self._state[0] in  [states.INIT, states.UNKNOWN]:
             self._state = copy.deepcopy(CC2xlib.globals.CRATE._state)
@@ -311,7 +314,12 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                 self._state =  copy.deepcopy(CC2xlib.globals.CRATE._state)
                 self._state = (CC2xlib.globals.CRATE._state[0], self._state[1])
         CC2xlib.globals.CRATE.lock.release()
-        return self._state
+
+        strvoltages = CC2xlib.globals.VoltagesJson(self.channels_handled)
+
+        fullinfostate = copy.deepcopy(self._state)
+        fullinfostate = (fullinfostate[0] ,fullinfostate[1] + "  " + strvoltages)
+        return fullinfostate
 
 
 
@@ -362,10 +370,10 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                                     j = j + 1
 
                 if changemsg:
-                     print(changemsg)
-                     CC2xlib.globals.CRATE.lock.acquire()
-                     self._state = (self._state[0], self._state[1] + " : "+changemsg)
-                     CC2xlib.globals.CRATE.lock.release()
+                    print(changemsg)
+                    CC2xlib.globals.CRATE.lock.acquire()
+                    self._state = (self._state[0], self._state[1] + " : "+changemsg)
+                    CC2xlib.globals.CRATE.lock.release()
                 #here we actually elaborate the workjobs
                 for nextjob in workqueue:
                     for item in nextjob:

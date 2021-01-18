@@ -58,6 +58,29 @@ def StatusJson(channellist)->str:
     CRATE.lock.release()
     return rv
 
+#WORK_ONGOING
+def VoltagesJson(channellist)->str:
+    rv = ''
+    tmpl = []
+    CRATE.lock.acquire()
+    for ch in channellist:
+        if ch in CRATE.itemUpdated:
+            d ={}
+            _all = CRATE.itemUpdated[ch]
+            if "Status.voltageMeasure" in _all:
+                tmp = _all["Status.voltageMeasure"]
+                v = tmp['v']
+                u = tmp['u']
+                s = str(v) + u
+                d[ch] = s
+                tmpl.append(d)
+
+
+    rv = json.dumps(tmpl)
+    CRATE.lock.release()
+    return rv
+
+
 ctrlcreceived = 0
 
 async def listen(connection):
@@ -228,7 +251,7 @@ async def listen(connection):
                                                                 if float(v['v']) != float(requestedvalues[k]):
                                                                     allrequestedok = False
 
-                                                            if (float(timestamp) < float(inst.waitstringmintime)):
+                                                            if float(timestamp) < float(inst.waitstringmintime):
                                                                 allrequestedok = False
                                                         except Exception:
                                                             allrequestedok = False
@@ -456,7 +479,7 @@ def reset():
             print(CRATE._state[1])
             CRATE.lock.release()
 
-    if not (future2):
+    if not future2:
         if CRATE.loop:
             CRATE.loop.close()
         CRATE.loop = None
@@ -617,8 +640,8 @@ def queue_request(rol):
             time.sleep(1)
             i = i + 1
             if i > 5:
-              print("queue_request() sid=='' after 5 seconds -> return")
-              return result
+                print("queue_request() sid=='' after 5 seconds -> return")
+                return result
     future = asyncio.run_coroutine_threadsafe(execute_request(rol), CRATE.loop)
     timeout = 15
     try :

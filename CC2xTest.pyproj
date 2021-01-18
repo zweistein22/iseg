@@ -42,6 +42,7 @@
     <Content Include=".gitignore" />
     <Content Include="172_25_25_56_getItemsInfo.xml" />
     <Content Include="CC2xlib\example\Erwin-both.res" />
+    <Content Include="CC2xlib\example\Erwin-small.res" />
     <Content Include="CC2xlib\example\HV-TEST.res" />
     <Content Include="CC2xlib\example\iseg-Channel_0_1_6.res" />
     <Content Include="CC2xlib\__pycache__\globals.cpython-37.pyc" />

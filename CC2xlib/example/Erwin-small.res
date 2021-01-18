@@ -14,10 +14,10 @@ transitions="""
               {"GROUP":["Window"],"Control.clearAll": [1]},
 			  {"GROUP":["Anodes"],"Control.clearAll": [1,1,1]},
 			  {"GROUP":["CathodeStripes"],"Control.clearAll": [1,1]},
-              {"GROUP":["Window"],"Control.voltageSet": [-40]},
+              {"GROUP":["Window"],"Control.voltageSet": [-1000]},
               {"GROUP":["Window"],"Control.on": [1] },
               {"GROUP":["Window"],"Status.ramping": [0] },
-              {"GROUP":["Anodes"],"Control.voltageSet": [75,100,85]},
+              {"GROUP":["Anodes"],"Control.voltageSet": [2075,2100,2085]},
               {"GROUP":["Anodes"],"Control.on": [1,1,1] },
               {"GROUP":["CathodeStripes"],"Control.voltageSet": [75,80]},
               {"GROUP":["CathodeStripes"],"Control.on": [1,1]},
@@ -35,13 +35,14 @@ transitions="""
             ]
 },
 {"goMoving":  [
-              {"GROUP":["Anodes"],"Control.voltageSet": [65,60,70]},
+              {"GROUP":["Anodes"],"Control.voltageSet": [1875,1900,1985]},
               {"GROUP":["Anodes"],"Status.ramping": [0,0,0] }
              ]
 }
 ]
 }
 """
+
 #Control.voltageRampspeed is in % of Nominal Voltage (is 3000V with current device)
 # so 0.1666 is 5V/s
 
@@ -62,14 +63,14 @@ operatingstyles="""
   [
     {"normal": {
 	            "Control.clearAll" : 1 ,
-                "Control.currentSet" : 1.5,
-                "Setup.delayedTripTime" : 500,
+                "Control.currentSet" : 1.0,
+                "Setup.delayedTripTime" : 100,
 				"Setup.delayedTripAction" : 2
      }},
 	 {"slow": {
 	            "Control.clearAll" : 1 ,
-                "Control.currentSet" : 3,
-                "Setup.delayedTripTime" : 800,
+                "Control.currentSet" : 1.0,
+                "Setup.delayedTripTime" : 100,
 				"Setup.delayedTripAction" : 2
 	 }}
    ]

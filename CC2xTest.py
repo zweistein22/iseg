@@ -2,8 +2,9 @@ import sys
 import logging
 import time
 from os import path
-import toml
 import json
+import toml
+
 
 # Add import path for inplace usage
 sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '../../..')))
@@ -98,10 +99,10 @@ class IntelligentPowerSupply(CC2x.IntelligentPowerSupply):
 
 a = IntelligentPowerSupply()
 while True:
-  time.sleep(1)
-  st2 = a.state()
-  if st2[0] != states.INIT:
-      break
+    time.sleep(1)
+    st2 = a.state()
+    if st2[0] != states.INIT:
+        break
 
 
 for i in range(0,25):
@@ -143,10 +144,10 @@ for i in range(0,25):
 
 
 while True:
-  time.sleep(1)
-  st = a.state()
-  if st[0] != states.BUSY:
-      break
+    time.sleep(1)
+    st = a.state()
+    if st[0] != states.BUSY:
+        break
 
 print("here")
 print(st)
@@ -157,12 +158,12 @@ time.sleep(3)
 a.On()
 
 while True:
-  time.sleep(1)
-  st = a._state
+    time.sleep(1)
+    st = a._state
 
-  st2 = a.state()
-  if st[0] != states.INIT:
-      break
+    st2 = a.state()
+    if st[0] != states.INIT:
+        break
 
 
 a.Write(cmd)
