@@ -287,7 +287,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
             raise Exception('len list of values ', 'not equal len list of keys')
 
         rol = []
-
+        # pylint: disable=consider-using-enumerate
         for j in range(len(keys)):
             print("key="+ str(keys[j]) + ", value="+str(values[j]) )
             rol.append( CC2xlib.json_data.make_requestobject("getItem",keys[j],"Control.voltageSet",''))

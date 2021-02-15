@@ -1,5 +1,4 @@
 import sys
-import logging
 import time
 from os import path
 import json
@@ -8,6 +7,7 @@ import toml
 
 # Add import path for inplace usage
 sys.path.insert(0, path.abspath(path.join(path.dirname(__file__), '../../..')))
+# pylint: disable=wrong-import-position
 from entangle.core import states
 import CC2xlib.globals
 import CC2xlib.json_data
@@ -16,7 +16,7 @@ import CC2x
 import isegCC2xChannel
 
 
-operatingstyle="""
+operatingstyle = """
 {
     "Control.currentSet" : 1.0,
     "Setup.delayedTripTime" : 500,
@@ -34,11 +34,11 @@ for style in jos:
 respath = 'CC2xlib/example/Erwin-both.res'
 #respath = 'CC2xlib/example/HV-TEST.res'
 
-
 class PowerSupply(isegCC2xChannel.PowerSupply):
     _props = {}
     #log = logging.getLogger()
-    def __init__(self,logger=None):
+    # pylint: disable=unused-argument, super-init-not-called
+    def __init__(self, logger=None):
         with open(respath) as fd:
             data = toml.load(fd)
             tango_name = 'test/Erwin/HV-Powersupply-Channel016'
@@ -55,7 +55,8 @@ class IntelligentPowerSupply(CC2x.IntelligentPowerSupply):
 
     _props = {}
     #log = logging.getLogger()
-    def __init__(self,logger=None):
+    # pylint: disable=unused-argument
+    def __init__(self, logger=None):
         #super(CC2x.IntelligentPowerSupply, self).__init__(log)
 
         with open(respath) as fd:
@@ -85,10 +86,11 @@ class IntelligentPowerSupply(CC2x.IntelligentPowerSupply):
         for rstyle in self.joperatingstates :
             stylename = list(rstyle.keys())[0]
             if stylename == rampstyle :
+                # pylint: disable=redefined-outer-name
                 for k, v in rstyle[stylename].items():
                     item = k
                     if len(channels) != len(channelvalues):
-                        raise Exception('len list of channelvalues ', 'not equal len list of channels in group '+groupname)
+                        raise Exception('len list of channelvalues ', 'not equal len list of channels in group ' + groupname)
                     for channel in channels :
                         rol.append(CC2xlib.json_data.make_requestobject("setItem",channel,item,v))
         j = 0
@@ -122,11 +124,10 @@ for i in range(0,25):
 #      b.write_voltage(102.5)
 
 
-
 n_items = a.read_availableLines()
 
 delays = []
-cmds =[]
+cmds = []
 
 for i in range(n_items):
     delays.append(0)

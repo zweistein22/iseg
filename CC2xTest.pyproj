@@ -50,6 +50,7 @@
     <Content Include="CC2xlib\__pycache__\ping.cpython-37.pyc" />
     <Content Include="CC2xlib\__pycache__\__init__.cpython-37.pyc" />
     <Content Include="pylintrc" />
+    <Content Include="README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

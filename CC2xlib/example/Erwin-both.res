@@ -1,4 +1,4 @@
-["test/Erwin/HV-IntelligentPowersupply"]
+["test/ERWIN-hvsupply/IntelligentPowersupply"]
 type = "iseg.CC2x.IntelligentPowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -77,7 +77,7 @@ operatingstyles="""
 """
 
 
-["test/Erwin/HV-Powersupply-Anode1"]
+["test/ERWIN-hvsupply/Powersupply-Anode1"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -95,7 +95,7 @@ operatingstyle="""
 }
 """
 
-["test/Erwin/HV-Powersupply-Anode2"]
+["test/ERWIN-hvsupply/Powersupply-Anode2"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -113,7 +113,7 @@ operatingstyle="""
 }
 """
 
-["test/Erwin/HV-Powersupply-Anode3"]
+["test/ERWIN-hvsupply/Powersupply-Anode3"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -131,7 +131,7 @@ operatingstyle="""
 }
 """
 
-["test/Erwin/HV-Powersupply-CathodeStripe1"]
+["test/ERWIN-hvsupply/Powersupply-CathodeStripe1"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -149,7 +149,7 @@ operatingstyle="""
 }
 """
 
-["test/Erwin/HV-Powersupply-CathodeStripe2"]
+["test/ERWIN-hvsupply/Powersupply-CathodeStripe2"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'
@@ -168,7 +168,7 @@ operatingstyle="""
 """
 
 
-["test/Erwin/HV-Powersupply-Window"]
+["test/ERWIN-hvsupply/Powersupply-Window"]
 type = "iseg.isegCC2xChannel.PowerSupply"
 address = '172.25.25.56'
 user = 'admin'

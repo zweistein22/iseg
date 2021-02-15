@@ -8,7 +8,7 @@
 # **************************************************************************
 
 from entangle.device.iseg.CC2xlib import json_data
-
+# pylint: disable=too-few-public-methods
 class HardLimits:
     unitTime = 'ms'
     unitCurrent = 'uA'
