@@ -5,7 +5,7 @@ user = 'admin'
 password = 'password'
 absmin = 0
 absmax = 0
-tripeventallmodulesoff = 0
+tripeventallmodulesoff = 1
 
 transitions="""
 {

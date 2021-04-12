@@ -14,7 +14,7 @@ class HardLimits:
     unitCurrent = 'uA'
     maxTripCurrent = 10
     maxVoltage = 90
-    tripEventAllModulesOff = False
+    tripEventAllModulesOff = True
 
 
     @staticmethod

@@ -36,7 +36,7 @@ class CmdProcessor(object):
 
     def Write(self, msg:str)->uint32:
         self.lastcmd = msg.rstrip()
-        print('CmdProcessor.Write('+self.lastcmd + ')')
+        #print('CmdProcessor.Write('+self.lastcmd + ')')
         ourcmds = ['APPLY:']
         for cmd in ourcmds:
             if self.lastcmd.startswith(cmd):
@@ -73,6 +73,66 @@ class CmdProcessor(object):
 class IntelligentPowerSupply(CmdProcessor,base.StringIO):
     """Controls an Iseg CC2x high-voltage power supply via websocket.
        Iseg CC2x accepts command via the entangle StringIO interface
+
+Configuration of the .res file, basics.
+Channels can be grouped together in Groups in the form
+groups='''
+{
+"GROUP": [
+{"Anodes": { "CHANNEL": ["0_1_0","0_1_1","0_1_2"] ,"OPERATINGSTYLE": "normal" }}
+]
+}
+'''
+This groups together channels which are defined by line_address_channel (to my understanding a better naming would be crate_slot_channel ). In this example channels 0, 1, and 2 from crate 0 and slot 1 are grouped together into a GROUP called “Anodes”.
+
+Each group can have an optional OPERATINGSTYLE . This is just a set of commands for the Iseg CC2x grouped together. Commands for the Iseg modules are device specific and are specified in the url = 'http://' + address + '/api/getItemsInfo' where address is the ip address of the Iseg module.
+The entangle-isegCC2x interface will download this file upon first connection.
+Typical commands are:
+operatingstyle='''
+{
+"Control.clearAll" : 1,
+"Control.currentSet" : 1.5,
+"Setup.delayedTripTime" : 1500,
+"Setup.delayedTripAction" : 2
+}
+'''
+
+“Control.clearAll” resets all errors.
+“Control.currentSet” sets the maximum current , above and above
+“SetupdelayedTripTime” the “Setup.delayedTripAction” will be set. More details to all
+these commands are found in the getItemsInfo.xml mentioned before.
+
+Configuring transitions:
+Transitions are changes of states of groups of channels. An example would be the
+request to ramp up the “Window” GROUP voltage, wait until ramped up, then ramp
+up the “Anodes” GROUP voltage and “CatodeStripes” group voltage in parallel and
+wait until finished.
+Below the definition of the transition The transition for above action would be defined
+such
+transitions='''
+{
+"TRANSITION" :[
+{"goOn": [
+{"GROUP":["Window"],"Control.clearAll": [1]},
+{"GROUP":["Anodes"],"Control.clearAll": [1,1,1]},
+{"GROUP":["CathodeStripes"],"Control.clearAll": [1,1]},
+{"GROUP":["Window"],"Control.voltageSet": [-1000]},
+{"GROUP":["Window"],"Control.on": [1] },
+{"GROUP":["Window"],"Status.ramping": [0] },
+{"GROUP":["Anodes"],"Control.voltageSet": [2075,2100,2085]},
+{"GROUP":["Anodes"],"Control.on": [1,1,1] },
+{"GROUP":["CathodeStripes"],"Control.voltageSet": [75,80]},
+{"GROUP":["CathodeStripes"],"Control.on": [1,1]},
+{"GROUP":["CathodeStripes"],"Status.ramping": [0,0]},
+{"GROUP":["Anodes"],"Status.ramping": [0,0,0] }
+]
+},
+]
+}
+'''
+The command “Status.ramping” returns either 1 if a channel in a GROUP is still
+ramping or it returns 0 once ramping has finished. Waiting for ramping finished can
+hence be monitored .
     """
 
     commands = {
@@ -101,7 +161,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
                               states.UNKNOWN,)),
 
         'applyTransition':
-            Cmd('applies a transition like Off->On, On->Off etc.',
+            Cmd('applies a transition like goOn, goOff etc.',
                 str,None, 'transition name', 'None',
                 disallowed = (states.BUSY,states.FAULT,states.INIT,states.OFF)),
 
@@ -117,7 +177,7 @@ class IntelligentPowerSupply(CmdProcessor,base.StringIO):
         'transitions': Prop(str, 'transitions.',default=''),
         'groups': Prop(str, 'groups.'),
         'operatingstyles': Prop(str, 'operatingstyles.',default=''),
-        'tripeventallmodulesoff': Prop(boolean, 'operatingstyles.',default=False),
+        'tripeventallmodulesoff': Prop(boolean, 'operatingstyles.',default=HardLimits.tripEventAllModulesOff),
     }
     attributes = {
          'jsonstatus':   Attr(str,'',writable = False,memorized = False),
