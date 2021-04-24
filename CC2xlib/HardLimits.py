@@ -13,7 +13,7 @@ class HardLimits:
     unitTime = 'ms'
     unitCurrent = 'uA'
     maxTripCurrent = 10
-    maxVoltage = 90
+    maxVoltage = 2250
     tripEventAllModulesOff = True
 
 
