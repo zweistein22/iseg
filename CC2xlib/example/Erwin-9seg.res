@@ -1,6 +1,6 @@
 ["test/ERWIN-hvsupply/IntelligentPowersupply"]
 type = "iseg.CC2x.IntelligentPowerSupply"
-address = '172.25.25.56'
+address = '172.25.25.57'
 user = 'admin'
 password = 'password'
 absmin = 0
