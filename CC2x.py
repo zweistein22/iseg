@@ -18,9 +18,13 @@ from typing import List
 from entangle import base
 from entangle.core import states, Prop, Attr, Cmd, pair, listof, uint32, boolean
 from entangle.device.iseg import CC2xlib
+# pylint: disable=unused-import
 import entangle.device.iseg.CC2xlib.globals
+# pylint: disable=unused-import
 import entangle.device.iseg.CC2xlib.json_data
+# pylint: disable=unused-import
 import entangle.device.iseg.CC2xlib.CC2xjsonhandling
+
 from entangle.device.iseg.CC2xlib.HardLimits import HardLimits
 
 class CmdProcessor(object):
