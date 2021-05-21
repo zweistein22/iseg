@@ -26,8 +26,8 @@ transitions="""
              ]
 },
 {"goOff":  [
-             {"GROUP":["Anodes"],"Control.on": [0,0,0] } ,
-             {"GROUP":["Anodes"],"Status.ramping": [0,0,0] },
+             {"GROUP":["Anodes"],"Control.on": [0,0,0,0,0,0,0,0,0,0]  } ,
+             {"GROUP":["Anodes"],"Status.ramping": [0,0,0,0,0,0,0,0,0,0] },
              {"GROUP":["CathodeStripes"],"Control.on": [0,0]},
              {"GROUP":["Window"],"Control.on": [0] },
              {"GROUP":["Window"],"Status.ramping": [0] },
@@ -35,8 +35,8 @@ transitions="""
             ]
 },
 {"goMoving":  [
-              {"GROUP":["Anodes"],"Control.voltageSet": [1875,1900,1985]},
-              {"GROUP":["Anodes"],"Status.ramping": [0,0,0] }
+              {"GROUP":["Anodes"],"Control.voltageSet": [1875,1900,1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992]},
+              {"GROUP":["Anodes"],"Status.ramping": [0,0,0,0,0,0,0,0,0,0] }
              ]
 }
 ]
@@ -51,6 +51,8 @@ groups="""
  "GROUP": [
    {"Module0": { "CHANNEL": ["0_0"], "Control.on": 1, "Control.kill": 0, "Control.voltageRampspeed" : 0.17 }},
    {"Module1": { "CHANNEL": ["0_1"], "Control.on": 1,"Control.kill": 0, "Control.voltageRampspeed" : 0.17 }},
+   {"Module2": { "CHANNEL": ["0_2"], "Control.on": 1,"Control.kill": 0, "Control.voltageRampspeed" : 0.17 }},
+   {"Module3": { "CHANNEL": ["0_3"], "Control.on": 1,"Control.kill": 0, "Control.voltageRampspeed" : 0.17 }},
    {"Window": { "CHANNEL": ["0_1_7"], "OPERATINGSTYLE": "normal" }},
    {"Anodes": { "CHANNEL": ["0_1_0","0_1_1","0_1_2","0_0_1","0_0_2","0_0_3","0_0_4","0_0_5","0_0_6", "0_0_7"]  ,"OPERATINGSTYLE": "normal" }},
    {"CathodeStripes": { "CHANNEL": ["0_1_4","0_1_5"],  "OPERATINGSTYLE": "slow" }}
